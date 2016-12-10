@@ -16,6 +16,7 @@ namespace Urho3D
 
 namespace Ld37
 {
+    /// Main menu game mode
     class MainMenuMode : public Mode
     {
         URHO3D_OBJECT(MainMenuMode, Mode);
@@ -37,6 +38,12 @@ namespace Ld37
         virtual void Stop();
 
     private:
+        /// Handle presses of the Play button
+        void HandlePlay(Urho3D::StringHash type, Urho3D::VariantMap& data);
+
+        /// Handle exit events
+        void HandleExit(Urho3D::StringHash type, Urho3D::VariantMap& data);
+
         /// The application context
         Urho3D::Context* context_;
 

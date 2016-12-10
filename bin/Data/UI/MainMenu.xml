@@ -1,5 +1,6 @@
 <?xml version="1.0"?>
 <element type="Window">
+    <attribute name="Name" value="Menu"/>
     <attribute name="Horiz Alignment" value="Center" />
     <attribute name="Vert Alignment" value="Center" />
     <attribute name="Size" value="180 200" />
