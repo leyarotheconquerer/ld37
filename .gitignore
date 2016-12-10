@@ -1,0 +1,10 @@
+*.exe
+*.log
+*.cbp
+*.dll.*
+Makefile
+CMakeCache.txt
+cmake_install.cmake
+cmake-build-debug/
+CMakeFiles/
+.idea/
