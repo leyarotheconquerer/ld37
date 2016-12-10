@@ -3,6 +3,7 @@
 //
 
 #include "Ld37.h"
+#include <Urho3D/IO/Log.h>
 
 using namespace Ld37;
 using namespace Urho3D;
@@ -17,7 +18,11 @@ Ld37App::Ld37App(Context* context) :
 
 void Ld37App::Setup()
 {
-
+    engineParameters_["LogLevel"] = LOG_INFO;
+    engineParameters_["WindowTitle"] = "Ludum Dare 37";
+    engineParameters_["FullScreen"] = false;
+    engineParameters_["Sound"] = true;
+    engineParameters_["EventProfiler"] = true;
 }
 
 void Ld37App::Start()
