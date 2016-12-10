@@ -7,6 +7,12 @@
 
 #include "Subsystems/Mode.h"
 
+namespace Urho3D
+{
+    class Scene;
+    class Node;
+}
+
 namespace Ld37
 {
     class MainMenuMode : public Mode
@@ -18,7 +24,7 @@ namespace Ld37
         MainMenuMode(Urho3D::Context* context);
 
         /// Destructor
-        virtual ~MainMenuMode() {}
+        virtual ~MainMenuMode();
 
         /// Implement the Start event
         virtual void Start();
@@ -32,6 +38,12 @@ namespace Ld37
     private:
         /// The application context
         Urho3D::Context* context_;
+
+        /// Scene of the current mode
+        Urho3D::Scene* scene_;
+
+        /// Node which plays music
+        Urho3D::Node* musicNode_;
     };
 }
 
