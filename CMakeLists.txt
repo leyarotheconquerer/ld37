@@ -28,6 +28,8 @@ endif()
 set (CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/Cmake/Modules)
 # Include Urho3D CMake common module
 include (Urho3D-CMake-Common)
+# Include headers
+include_directories(Sources)
 # Define source files
 define_source_files(RECURSE true GLOB_CPP_PATTERNS Sources/*.cpp)
 # Setup target with resource copying

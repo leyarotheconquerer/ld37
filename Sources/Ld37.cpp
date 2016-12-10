@@ -3,7 +3,8 @@
 //
 
 #include "Ld37.h"
-#include <Urho3D/IO/Log.h>
+#include "Subsystems/GameMode.h"
+#include "Modes/MainMenuMode.h"
 
 using namespace Ld37;
 using namespace Urho3D;
@@ -27,7 +28,10 @@ void Ld37App::Setup()
 
 void Ld37App::Start()
 {
+    GameMode* gameMode = new GameMode(context_);
+    context_->RegisterSubsystem(gameMode);
 
+    gameMode->Initialize<MainMenuMode>();
 }
 
 void Ld37App::Stop()

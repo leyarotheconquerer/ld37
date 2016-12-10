@@ -7,9 +7,11 @@
 
 #include <Urho3D/Engine/Application.h>
 
-namespace Ld37 {
+namespace Ld37
+{
     /// Ld37 application class
-    class Ld37App : public Urho3D::Application {
+    class Ld37App : public Urho3D::Application
+    {
         URHO3D_OBJECT(Ld37App, Urho3D::Application);
 
     public:
