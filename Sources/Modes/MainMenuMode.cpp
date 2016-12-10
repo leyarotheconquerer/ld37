@@ -5,11 +5,17 @@
 #include "MainMenuMode.h"
 #include "DungeonMode.h"
 #include "Subsystems/GameMode.h"
+#include <Urho3D/Urho2D/Drawable2D.h>
+#include <Urho3D/Urho2D/Sprite2D.h>
+#include <Urho3D/Urho2D/StaticSprite2D.h>
 #include <Urho3D/Audio/Sound.h>
 #include <Urho3D/Audio/SoundSource.h>
 #include <Urho3D/Engine/Engine.h>
+#include <Urho3D/Graphics/Camera.h>
 #include <Urho3D/Graphics/Graphics.h>
-#include <Urho3D/IO/Log.h>
+#include <Urho3D/Graphics/Renderer.h>
+#include <Urho3D/Graphics/Octree.h>
+#include <Urho3D/Graphics/Zone.h>
 #include <Urho3D/Input/Input.h>
 #include <Urho3D/Resource/ResourceCache.h>
 #include <Urho3D/Resource/XMLFile.h>
@@ -40,6 +46,7 @@ void MainMenuMode::Start()
     Input* input = GetSubsystem<Input>();
     Graphics* graphics = GetSubsystem<Graphics>();
     Log* log = GetSubsystem<Log>();
+    Renderer* renderer = GetSubsystem<Renderer>();
     ResourceCache* cache = GetSubsystem<ResourceCache>();
     UI* ui = GetSubsystem<UI>();
 
@@ -62,6 +69,19 @@ void MainMenuMode::Start()
     ui->GetRoot()->AddChild(uiRoot_);
 
     scene_ = new Scene(context_);
+    SharedPtr<File> sceneFile = cache->GetFile("Scene/MainMenu.xml");
+    bool result = scene_->LoadXML(*sceneFile);
+
+    Zone* zone = renderer->GetDefaultZone();
+    zone->SetFogColor(Color(.36f, .38f, .47f, 1.f));
+
+    cameraNode_ = scene_->CreateChild("Camera");
+    Camera* camera = cameraNode_->CreateComponent<Camera>();
+    camera->SetOrthographic(true);
+    camera->SetOrthoSize((float)graphics->GetHeight() * PIXEL_SIZE);
+
+    SharedPtr<Viewport> viewport(new Viewport(context_, scene_, camera));
+    renderer->SetViewport(0, viewport);
 
     Sound* music = cache->GetResource<Sound>("Sounds/TestTheme.ogg");
     if (music)

@@ -53,6 +53,9 @@ namespace Ld37
         /// Root element of the UI
         Urho3D::SharedPtr<Urho3D::UIElement> uiRoot_;
 
+        /// Camera scene node
+        Urho3D::Node* cameraNode_;
+
         /// Node which plays music
         Urho3D::Node* musicNode_;
     };
