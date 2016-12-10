@@ -11,6 +11,7 @@ namespace Urho3D
 {
     class Scene;
     class Node;
+    class UIElement;
 }
 
 namespace Ld37
@@ -41,6 +42,9 @@ namespace Ld37
 
         /// Scene of the current mode
         Urho3D::Scene* scene_;
+
+        /// Root element of the UI
+        Urho3D::SharedPtr<Urho3D::UIElement> uiRoot_;
 
         /// Node which plays music
         Urho3D::Node* musicNode_;
