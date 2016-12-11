@@ -65,7 +65,7 @@ void DungeonMode::Start()
     cameraNode_ = scene_->CreateChild("Camera");
     Camera* camera = cameraNode_->CreateComponent<Camera>();
     camera->SetOrthographic(true);
-    camera->SetOrthoSize((float)graphics->GetHeight() * PIXEL_SIZE);
+    camera->SetOrthoSize((float)graphics->GetHeight() * PIXEL_SIZE * 2);
 
     SharedPtr<Viewport> viewport(new Viewport(context_, scene_, camera));
     renderer->SetViewport(0, viewport);
@@ -105,7 +105,7 @@ void DungeonMode::Start()
 
 void DungeonMode::Update(float timestep)
 {
-    const float MOVEMENT_FACTOR = 5.0f;
+    const float MOVEMENT_FACTOR = 10.0f;
     Vector2 direction(0,0);
     if(input_->GetKeyDown(KEY_UP) || input_->GetKeyDown(KEY_W))
     {

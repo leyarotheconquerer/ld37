@@ -209,19 +209,20 @@ Urho3D::Vector<int> Map::GenerateMap()
         log->Write(LOG_INFO, "=======================");
     }
 
-
     size_ = size;
     return map;
 }
 
 void Map::PopulateMap(Urho3D::Vector<int>& map)
 {
+    Log* log = GetSubsystem<Log>();
+
     /// Relative locations to place items in a room (0-4 Center,NESW)
     Vector<Vector2> placements = {
         {TILE_SIZE * 1.5f, TILE_SIZE * 1.5f},
-        {TILE_SIZE * 1.5f, TILE_SIZE},
+        {TILE_SIZE * 1.5f, TILE_SIZE * 2.f},
         {TILE_SIZE * 2.5f, TILE_SIZE * 1.5f},
-        {TILE_SIZE * 1.5f, TILE_SIZE * 3.f},
+        {TILE_SIZE * 1.5f, TILE_SIZE * .5f},
         {TILE_SIZE * .5f, TILE_SIZE * 1.5f},
     };
 
@@ -248,24 +249,26 @@ void Map::PopulateMap(Urho3D::Vector<int>& map)
         {
             map_[i].type = Space::ROOM;
             map_[i].pos = pos;
-            Vector<int> neighbors = {
-                (space.y_ - 1) * size_.x_ + space.x_,
-                space.y_ * size_.x_ + space.x_ + 1,
-                (space.y_ + 1) * size_.x_ + space.x_,
-                space.y_ * size_.x_ + space.x_ - 1,
+            HashMap<int, int> neighbors = {
+                {Space::SOUTH, (space.y_ - 1) * size_.x_ + space.x_},
+                {Space::EAST, space.y_ * size_.x_ + space.x_ + 1},
+                {Space::NORTH, (space.y_ + 1) * size_.x_ + space.x_},
+                {Space::WEST, space.y_ * size_.x_ + space.x_ - 1},
             };
             for (auto j = neighbors.Begin(); j != neighbors.End(); j++)
             {
-                if (*j >= 0 && *j < map.Size())
+                if (j->second_ >= 0 && j->second_ < map.Size())
                 {
-                    int test = map[*j];
-                    if (map[*j] == map[i] + 1)
+                    int test = map[j->second_];
+                    if (map[j->second_] == map[i] + 1)
                     {
-                        map_[i].prev = &map_[*j];
+                        map_[i].prev = &map_[j->second_];
+                        map_[i].prevDir = static_cast<Space::Direction>(j->first_);
                     }
-                    else if (map[*j] == map[i] - 1)
+                    else if (map[j->second_] == map[i] - 1 && map[j->second_] != 0)
                     {
-                        map_[i].next = &map_[*j];
+                        map_[i].next = &map_[j->second_];
+                        map_[i].nextDir = static_cast<Space::Direction>(j->first_);
                     }
                 }
             }
@@ -292,9 +295,60 @@ void Map::PopulateMap(Urho3D::Vector<int>& map)
         }
     }
 
-    for(int i = 0; i < ITEM_DENSITY * size_.x_ * size_.y_; ++i)
+    // Generate player pickups
+    int i = 0;
+    int placed = 0;
+    while (i < size_.x_ * size_.y_ &&
+        placed < ITEM_DENSITY * size_.x_ * size_.y_)
     {
+        int spaceIndex = Rand() % map_.Size();
+        if (map_[spaceIndex].type == Space::EMPTY && map_[spaceIndex].items.Size() == 0)
+        {
+            IntVector2 space = {
+                spaceIndex % size_.x_,
+                spaceIndex / size_.x_
+            };
+            Vector2 pos = Vector2(space.x_ * ROOM_SIZE, space.y_ * ROOM_SIZE);
 
+            Item item;
+            item.dir = Item::CENTER;
+            // HOLE -> FALSE_TREASURE
+            item.type = static_cast<Item::Type>((Rand() % 3) + 1);
+            item.pos = pos + placements[item.dir];
+
+            map_[i].items.Push(item);
+            placed++;
+        }
+        i++;
+    }
+
+    // Generate hero pickups
+    i = 0;
+    placed = 0;
+    while (i < heroPathLength_ &&
+           placed < ITEM_DENSITY * heroPathLength_)
+    {
+        int spaceIndex = Rand() % map_.Size();
+        if (map_[spaceIndex].type == Space::ROOM &&
+            !map_[spaceIndex].items.Size() &&
+            spaceIndex != heroSpawn_ &&
+            spaceIndex != heroExit_)
+        {
+            IntVector2 space = {
+                spaceIndex % size_.x_,
+                spaceIndex / size_.x_
+            };
+            Vector2 pos = Vector2(space.x_ * ROOM_SIZE, space.y_ * ROOM_SIZE);
+
+            Item item;
+            item.dir = static_cast<Item::Direction>(map_[spaceIndex].prevDir);
+            item.type = Item::TREASURE;
+            item.pos = pos + placements[item.dir];
+
+            map_[spaceIndex].items.Push(item);
+            placed++;
+        }
+        i++;
     }
 }
 
@@ -306,11 +360,23 @@ Urho3D::Node* Map::ConstructMap(Scene* scene)
     // And now I'm using initializer lists
     // I'm so 11 :)
     // Also, my IDE is annoyed with me
-    HashMap<int, IntVector2> directions = {
-        {0, {0, 1}},   {1, {0, 1}},	{2, {0, 1}},	{3, {0, 1}},
-        {4, {-1, 0}},   {5, {-1, 0}},	{6, {1, 0}},	{7, {1, 0}},
-        {8, {-1, 0}},   {9, {-1, 0}},	{10, {1, 0}},	{11, {1, 0}},
-        {12, {0, -1}},   {13, {0, -1}},   {14, {0, -1}},	{15, {0, -1}}
+    HashMap<int, int> directions = {
+        {0, Space::NORTH},
+        {1, Space::NORTH},
+        {2, Space::NORTH},
+        {3, Space::NORTH},
+        {4, Space::WEST},
+        {5, Space::WEST},
+        {6, Space::EAST},
+        {7, Space::EAST},
+        {8, Space::WEST},
+        {9, Space::WEST},
+        {10, Space::EAST},
+        {11, Space::EAST},
+        {12, Space::SOUTH},
+        {13, Space::SOUTH},
+        {14, Space::SOUTH},
+        {15, Space::SOUTH},
     };
 
     Node* mapNode = scene->CreateChild("Map");
@@ -321,51 +387,104 @@ Urho3D::Node* Map::ConstructMap(Scene* scene)
     {
         for (int y = 0; y < size_.y_; y++)
         {
-            if (map_[y * size_.x_ + x].type != Space::EMPTY)
+            int spaceIndex = y * size_.x_ + x;
+
+            String roomName;
+            roomName.AppendWithFormat("Room[%d,%d]", x, y);
+            Node* roomNode = mapNode->CreateChild(roomName);
+
+            if (map_[spaceIndex].items.Size())
             {
-                String roomName;
-                roomName.AppendWithFormat("Room[%d,%d]", x, y);
-                Node* roomNode = mapNode->CreateChild(roomName);
+                Node* itemsNode = roomNode->CreateChild("Items");
+                for (auto i = map_[spaceIndex].items.Begin(); i != map_[spaceIndex].items.End(); i++)
+                {
+                    String itemName;
+                    switch (i->type)
+                    {
+                        case Item::TREASURE:
+                            itemName = "Chest";
+                            if (Rand() % 2) { itemName.Append("V"); }
+                            else { itemName.Append("H"); }
+                            if (i->triggered) { itemName.Append("Open0"); }
+                            else { itemName.Append("Close0"); }
+                            break;
+                        case Item::HOLE:
+                            itemName = "Hole1";
+                            break;
+                        case Item::MONSTER_SPAWNER:
+                            itemName = "Spawner1";
+                            break;
+                        case Item::FALSE_TREASURE:
+                            itemName = "Chest";
+                            if (Rand() % 2) { itemName.Append("V"); }
+                            else { itemName.Append("H"); }
+                            if (i->triggered) { itemName.Append("Open1"); }
+                            else { itemName.Append("Close1"); }
+                            break;
+                        case Item::EXIT:
+                        case Item::HERO_SPAWNER:
+                            itemName = "Spawner0";
+                            break;
+                        default:
+                            break;
+                    }
+                    Node* itemNode = itemsNode->CreateChild(itemName);
+                    itemNode->SetPosition(Vector3(i->pos.x_, i->pos.y_, 0));
+                    Sprite2D* itemSprite = levelSheet->GetSprite(itemName);
+                    StaticSprite2D* itemStatic = itemNode->CreateComponent<StaticSprite2D>();
+                    itemStatic->SetSprite(itemSprite);
+                    itemStatic->SetLayer(11);
+                    i->node = itemNode;
+
+                    if (i->type == Item::HOLE)
+                    {
+                        Node* subItemNode = itemNode->CreateChild("Cover");
+                        Sprite2D* subItemSprite = levelSheet->GetSprite("HoleCover1");
+                        StaticSprite2D* subItemStatic = subItemNode->CreateComponent<StaticSprite2D>();
+                        subItemStatic->SetSprite(subItemSprite);
+                        subItemStatic->SetLayer(12);
+                    }
+                }
+            }
+
+            if (map_[spaceIndex].type == Space::ROOM)
+            {
                 Node* floorNode = roomNode->CreateChild("Floor");
+                Node* wallNode = roomNode->CreateChild("Walls");
+
                 Node* collisionNode = floorNode->CreateChild("Collision");
                 collisionNode->SetPosition(Vector3(TILE_SIZE + .6 + ROOM_SIZE * x, 1, TILE_SIZE + .2 + ROOM_SIZE * y));
                 collisionNode->SetScale(Vector3(1.8, 1.8, 1.8));
-//                collisionNode->Pitch(90);
                 StaticModel* model = collisionNode->CreateComponent<StaticModel>();
                 model->SetModel(cache->GetResource<Model>("Models/Plane.mdl"));
                 collisionNode->CreateComponent<Navigable>();
-                Node* wallNode = roomNode->CreateChild("Walls");
+
                 for (int i = 0; i < 16; i++)
                 {
                     String spriteName;
-                    IntVector2 dir = directions[i];
-                    // Determine whether there is an adjacent room is in this direction
-                    int neighbor = (y + dir.y_) * size_.x_ + x + dir.x_;
-                    if (neighbor >= 0 && neighbor < map_.Size() &&
-                        map_[neighbor].type == Space::ROOM &&
-                        (map_[neighbor].next == &map_[y * size_.x_ + x] ||
-                        map_[neighbor].prev == &map_[y * size_.x_ + x])
-                        )
+                    Space::Direction dir = static_cast<Space::Direction>(directions[i]);
+                    if(map_[spaceIndex].nextDir == dir ||
+                       map_[spaceIndex].prevDir == dir)
                     {
-                        if (map_[neighbor].next == &map_[y * size_.x_ + x])
+                        if (map_[spaceIndex].nextDir == dir)
                         {
                             Node* doorNode = floorNode->CreateChild("Door");
                             doorNode->SetScale(Vector3(.4f, .6f, 1));
                             Vector3 delta;
-                            if (dir.y_ > 0)
+                            if (dir == Space::NORTH)
                             {
                                 delta = Vector3(1.85f, ROOM_SIZE - 1.f, 0);
                             }
-                            else if(dir.y_ < 0)
+                            else if(dir == Space::SOUTH)
                             {
                                 delta = Vector3(1.85f, -1.f, 0);
                             }
-                            else if(dir.x_ > 0)
+                            else if(dir == Space::EAST)
                             {
                                 delta = Vector3(ROOM_SIZE - 0.8f, 1.5f, 0);
                                 doorNode->Yaw(90);
                             }
-                            else if(dir.x_ < 0)
+                            else if(dir == Space::WEST)
                             {
                                 delta = Vector3(-0.8f, 1.5f, 0);
                                 doorNode->Yaw(90);
@@ -391,7 +510,7 @@ Urho3D::Node* Map::ConstructMap(Scene* scene)
                     Sprite2D* sectionSprite = levelSheet->GetSprite(spriteName);
                     StaticSprite2D* spriteComponent = sectionNode->CreateComponent<StaticSprite2D>();
                     spriteComponent->SetSprite(sectionSprite);
-                    spriteComponent->SetLayer(i / 8 + 1);
+                    spriteComponent->SetLayer((i / 8) * 10 + 10);
 
                     String floorName = FLOOR;
                     floorName.AppendWithFormat("%d", i);
@@ -411,7 +530,7 @@ Urho3D::Node* Map::ConstructMap(Scene* scene)
 
     navMesh_ = scene->GetOrCreateComponent<NavigationMesh>();
     navMesh_->SetPadding(Vector3(0.0f, 10.0f, 0.0f));
-    navMesh_->SetAgentRadius(.03f);
+    navMesh_->SetAgentRadius(TILE_SIZE / 4.f);
     navMesh_->SetCellSize(.01f);
     navMesh_->Build();
 

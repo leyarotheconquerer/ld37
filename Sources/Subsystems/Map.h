@@ -24,7 +24,7 @@ namespace Ld37
     /// Density of checkpoints in the hero path relative to map size
     const float CHECKPOINT_DENSITY = .05;
     /// Density of item spawn relative to map size
-    const float ITEM_DENSITY = .05;
+    const float ITEM_DENSITY = .25;
     /// Size of a room tile
     const float TILE_SIZE = 128 * Urho3D::PIXEL_SIZE;
     /// Size of a room
@@ -39,12 +39,13 @@ namespace Ld37
     /// Stores information about items in a room
     struct Item {
         enum Type {
-            TREASURE, HOLE, HERO_SPAWNER, MONSTER_SPAWNER, EXIT, FALSE_TREASURE
+            TREASURE = 0, HOLE = 1, MONSTER_SPAWNER, FALSE_TREASURE, EXIT, HERO_SPAWNER
         } type;
         enum Direction {
             CENTER = 0, NORTH, EAST, SOUTH, WEST
         } dir;
         Urho3D::Vector2 pos;
+        Urho3D::Node* node;
         bool triggered = false;
     };
 
@@ -53,9 +54,14 @@ namespace Ld37
         enum Type {
             ROOM, EMPTY, SPAWN
         } type;
+        enum Direction {
+            NO_DIR = 0, NORTH, EAST, SOUTH, WEST
+        };
         Urho3D::Vector2 pos;
         Space* next = NULL;
+        Direction nextDir = NO_DIR;
         Space* prev = NULL;
+        Direction prevDir = NO_DIR;
         Urho3D::Vector<Item> items;
     };
     /// Generates and contains all logic concerning the level map
