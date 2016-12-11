@@ -5,13 +5,20 @@
 #include "Map.h"
 #include <Urho3D/Engine/Engine.h>
 #include <Urho3D/IO/Log.h>
+#include <Urho3D/Graphics/DebugRenderer.h>
 #include <Urho3D/Graphics/Renderer.h>
+#include <Urho3D/Graphics/Model.h>
+#include <Urho3D/Graphics/Material.h>
+#include <Urho3D/Graphics/StaticModel.h>
+#include <Urho3D/Navigation/Navigable.h>
+#include <Urho3D/Navigation/NavigationMesh.h>
 #include <Urho3D/Resource/ResourceCache.h>
 #include <Urho3D/Scene/Scene.h>
 #include <Urho3D/Scene/Node.h>
 #include <Urho3D/Urho2D/Sprite2D.h>
 #include <Urho3D/Urho2D/SpriteSheet2D.h>
 #include <Urho3D/Urho2D/StaticSprite2D.h>
+#include <Urho3D/DebugNew.h>
 
 using namespace Ld37;
 using namespace Urho3D;
@@ -51,18 +58,18 @@ void logMap(Log* log, int level, Vector<int> map, int width, int height) {
 
 Node* Map::Generate(Scene* scene) {
 
-    GenerateMap();
+    Vector<int> map = GenerateMap();
+
+    PopulateMap(map);
 
     return ConstructMap(scene);
 }
 
-void Map::GenerateMap()
+Urho3D::Vector<int> Map::GenerateMap()
 {
     Log *log = GetSubsystem<Log>();
 
     SetRandomSeed(0);
-    int minSize = 1, maxSize = 30;
-    float checkpointDensity = .05;
 
     // This is a super efficient doom counter
     Vector<int> map;
@@ -74,8 +81,8 @@ void Map::GenerateMap()
         preDoom = doomCounter;
         // Generate a randomly sized map
         size = IntVector2({
-                            (Rand() % (maxSize - minSize)) + minSize,
-                            (Rand() % (maxSize - minSize)) + minSize
+                            (Rand() % (MAX_MAP_SIZE - MIN_MAP_SIZE)) + MIN_MAP_SIZE,
+                            (Rand() % (MAX_MAP_SIZE - MIN_MAP_SIZE)) + MIN_MAP_SIZE
                         });
         map = Vector<int>(size.x_ * size.y_, EMPTY);
         log->Write(LOG_INFO, String("Generating map")
@@ -85,27 +92,29 @@ void Map::GenerateMap()
         // Generate an exit point (0-3, NESW)
         int side = Rand() % 4;
         IntVector2 exit = GenerateSidePoint(size, side);
-        map[exit.y_ * size.x_ + exit.x_] = EXITPOINT;
+        heroExit_ = exit.y_ * size.x_ + exit.x_;
+        map[heroExit_] = EXITPOINT;
         log->Write(LOG_DEBUG, String("Exit point at")
             .AppendWithFormat(" (%d, %d)", exit.x_, exit.y_));
 
         // Generate a player spawn point on a different side (0-3, NESW)
         int playerSide = (Rand() % 3 + side + 1) % 4;
         IntVector2 spawn = GenerateSidePoint(size, playerSide);
-        if (exit == spawn)
+        playerSpawn_ = spawn.y_ * size.x_ + spawn.x_;
+        if (heroExit_ == playerSpawn_)
         {
             doomCounter--;
             continue;
         }
         else
         {
-            map[spawn.y_ * size.x_ + spawn.x_] = SPAWNPOINT;
+            map[playerSpawn_] = SPAWNPOINT;
             log->Write(LOG_DEBUG, String("Spawn point at")
                 .AppendWithFormat(" (%d, %d)", exit.x_, exit.y_));
         }
 
         // Generate a number of expected points in proportion to the checkpoint density
-        int expectedCount = (int) ((size.x_ * size.y_) * checkpointDensity + 1);
+        int expectedCount = (int) ((size.x_ * size.y_) * CHECKPOINT_DENSITY + 1);
         log->Write(LOG_DEBUG, String("Expected points")
             .AppendWithFormat(" = %d", expectedCount));
         // Always generate at least one point
@@ -148,7 +157,7 @@ void Map::GenerateMap()
 
         // Iterate through checkpoints and generate a path through each one
         IntVector2 previous = expectedPoints.Front().point;
-        IntVector2 final = previous;
+        heroSpawn_ = heroExit_;
         expectedPoints.Erase(expectedPoints.Begin()); // TODO: Optimize if Erase takes too much time
         for(auto i = expectedPoints.Begin(); i != expectedPoints.End(); ++i) {
             log->Write(LOG_DEBUG, String(i->dist));
@@ -172,7 +181,9 @@ void Map::GenerateMap()
                 }
                 log->Write(LOG_DEBUG, pathString);
 
-                final = path.Back();
+                IntVector2 initial = path.Back();
+                heroSpawn_ = initial.y_ * size.x_ + initial.x_;
+                heroPathLength_ = map[heroSpawn_];
             }
             else {
                 log->Write(LOG_DEBUG, String("Could not find a path from")
@@ -198,19 +209,98 @@ void Map::GenerateMap()
         log->Write(LOG_INFO, "=======================");
     }
 
-    map_ = map;
+
     size_ = size;
+    return map;
+}
+
+void Map::PopulateMap(Urho3D::Vector<int>& map)
+{
+    /// Relative locations to place items in a room (0-4 Center,NESW)
+    Vector<Vector2> placements = {
+        {TILE_SIZE * 1.5f, TILE_SIZE * 1.5f},
+        {TILE_SIZE * 1.5f, TILE_SIZE},
+        {TILE_SIZE * 2.5f, TILE_SIZE * 1.5f},
+        {TILE_SIZE * 1.5f, TILE_SIZE * 3.f},
+        {TILE_SIZE * .5f, TILE_SIZE * 1.5f},
+    };
+
+    map_ = Vector<Space>(map.Size());
+    for (int i = 0; i < map.Size(); ++i)
+    {
+        IntVector2 space({
+                             i % size_.x_,
+                             i / size_.x_
+                         });
+        Vector2 pos = Vector2(space.x_ * ROOM_SIZE, space.y_ * ROOM_SIZE);
+        if (map[i] == EMPTY)
+        {
+            map_[i].type = Space::EMPTY;
+            map_[i].pos = pos;
+        }
+        else if(map[i] == SPAWNPOINT)
+        {
+            map_[i].type = Space::SPAWN;
+            map_[i].pos = pos;
+            playerSpawn_ = i;
+        }
+        else
+        {
+            map_[i].type = Space::ROOM;
+            map_[i].pos = pos;
+            Vector<int> neighbors = {
+                (space.y_ - 1) * size_.x_ + space.x_,
+                space.y_ * size_.x_ + space.x_ + 1,
+                (space.y_ + 1) * size_.x_ + space.x_,
+                space.y_ * size_.x_ + space.x_ - 1,
+            };
+            for (auto j = neighbors.Begin(); j != neighbors.End(); j++)
+            {
+                if (*j >= 0 && *j < map.Size())
+                {
+                    int test = map[*j];
+                    if (map[*j] == map[i] + 1)
+                    {
+                        map_[i].prev = &map_[*j];
+                    }
+                    else if (map[*j] == map[i] - 1)
+                    {
+                        map_[i].next = &map_[*j];
+                    }
+                }
+            }
+            if (i == heroSpawn_)
+            {
+                Item spawner;
+                spawner.type = Item::HERO_SPAWNER;
+                spawner.dir = Item::CENTER;
+                spawner.pos = pos + placements[spawner.dir];
+                map_[i].items.Push(spawner);
+
+                heroSpawn_ = i;
+            }
+            if (i == heroExit_)
+            {
+                Item spawner;
+                spawner.type = Item::EXIT;
+                spawner.dir = Item::CENTER;
+                spawner.pos = pos + placements[spawner.dir];
+                map_[i].items.Push(spawner);
+
+                heroExit_ = i;
+            }
+        }
+    }
+
+    for(int i = 0; i < ITEM_DENSITY * size_.x_ * size_.y_; ++i)
+    {
+
+    }
 }
 
 Urho3D::Node* Map::ConstructMap(Scene* scene)
 {
-    const float TILE_SIZE = 128 * PIXEL_SIZE;
-    const float ROOM_SIZE = TILE_SIZE * 4;
-    const int Z_OFFSET = 10 * PIXEL_SIZE;
-    const String CLOSED_ROOM = "Closed";
-    const String OPEN_ROOM = "Open";
-    const String FLOOR = "Floor";
-
+    Log* log = GetSubsystem<Log>();
     ResourceCache* cache = GetSubsystem<ResourceCache>();
 
     // And now I'm using initializer lists
@@ -231,12 +321,19 @@ Urho3D::Node* Map::ConstructMap(Scene* scene)
     {
         for (int y = 0; y < size_.y_; y++)
         {
-            if (map_[y * size_.x_ + x] != EMPTY)
+            if (map_[y * size_.x_ + x].type != Space::EMPTY)
             {
                 String roomName;
                 roomName.AppendWithFormat("Room[%d,%d]", x, y);
                 Node* roomNode = mapNode->CreateChild(roomName);
                 Node* floorNode = roomNode->CreateChild("Floor");
+                Node* collisionNode = floorNode->CreateChild("Collision");
+                collisionNode->SetPosition(Vector3(TILE_SIZE + .6 + ROOM_SIZE * x, 1, TILE_SIZE + .2 + ROOM_SIZE * y));
+                collisionNode->SetScale(Vector3(1.8, 1.8, 1.8));
+//                collisionNode->Pitch(90);
+                StaticModel* model = collisionNode->CreateComponent<StaticModel>();
+                model->SetModel(cache->GetResource<Model>("Models/Plane.mdl"));
+                collisionNode->CreateComponent<Navigable>();
                 Node* wallNode = roomNode->CreateChild("Walls");
                 for (int i = 0; i < 16; i++)
                 {
@@ -245,11 +342,39 @@ Urho3D::Node* Map::ConstructMap(Scene* scene)
                     // Determine whether there is an adjacent room is in this direction
                     int neighbor = (y + dir.y_) * size_.x_ + x + dir.x_;
                     if (neighbor >= 0 && neighbor < map_.Size() &&
-                        map_[neighbor] > 0 &&
-                        (map_[y * size_.x_ + x] == map_[neighbor] + 1 ||
-                        map_[y * size_.x_ + x] == map_[neighbor] - 1
-                        ))
+                        map_[neighbor].type == Space::ROOM &&
+                        (map_[neighbor].next == &map_[y * size_.x_ + x] ||
+                        map_[neighbor].prev == &map_[y * size_.x_ + x])
+                        )
                     {
+                        if (map_[neighbor].next == &map_[y * size_.x_ + x])
+                        {
+                            Node* doorNode = floorNode->CreateChild("Door");
+                            doorNode->SetScale(Vector3(.4f, .6f, 1));
+                            Vector3 delta;
+                            if (dir.y_ > 0)
+                            {
+                                delta = Vector3(1.85f, ROOM_SIZE - 1.f, 0);
+                            }
+                            else if(dir.y_ < 0)
+                            {
+                                delta = Vector3(1.85f, -1.f, 0);
+                            }
+                            else if(dir.x_ > 0)
+                            {
+                                delta = Vector3(ROOM_SIZE - 0.8f, 1.5f, 0);
+                                doorNode->Yaw(90);
+                            }
+                            else if(dir.x_ < 0)
+                            {
+                                delta = Vector3(-0.8f, 1.5f, 0);
+                                doorNode->Yaw(90);
+                            }
+                            doorNode->SetPosition(Vector3(ROOM_SIZE * x + delta.x_, 1, ROOM_SIZE * y + delta.y_));
+                            model = doorNode->CreateComponent<StaticModel>();
+                            model->SetModel((cache->GetResource<Model>("Models/Plane.mdl")));
+                            doorNode->CreateComponent<Navigable>();
+                        }
                         spriteName = OPEN_ROOM;
                     }
                     else
@@ -283,6 +408,14 @@ Urho3D::Node* Map::ConstructMap(Scene* scene)
             }
         }
     }
+
+    navMesh_ = scene->GetOrCreateComponent<NavigationMesh>();
+    navMesh_->SetPadding(Vector3(0.0f, 10.0f, 0.0f));
+    navMesh_->SetAgentRadius(.03f);
+    navMesh_->SetCellSize(.01f);
+    navMesh_->Build();
+
+    navMesh_->FindPath(path_, Vector3(37.12, 1.03, 26.88), Vector3(3.84, 1.03, 1.28));
 
     return mapNode;
 }

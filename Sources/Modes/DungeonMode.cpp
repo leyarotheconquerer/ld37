@@ -13,11 +13,14 @@
 #include <Urho3D/Input/Input.h>
 #include <Urho3D/Input/InputEvents.h>
 #include <Urho3D/Graphics/Camera.h>
+#include <Urho3D/Graphics/DebugRenderer.h>
 #include <Urho3D/Graphics/Graphics.h>
+#include <Urho3D/Graphics/Light.h>
 #include <Urho3D/Graphics/Octree.h>
 #include <Urho3D/Graphics/Renderer.h>
 #include <Urho3D/Graphics/Viewport.h>
 #include <Urho3D/Graphics/Zone.h>
+#include <Urho3D/Navigation/NavigationMesh.h>
 #include <Urho3D/Resource/ResourceCache.h>
 #include <Urho3D/Scene/Scene.h>
 #include <Urho3D/UI/UIElement.h>
@@ -25,6 +28,8 @@
 #include <Urho3D/Urho2D/SpriteSheet2D.h>
 #include <Urho3D/Urho2D/StaticSprite2D.h>
 #include <Urho3D/Urho2D/Drawable2D.h>
+#include <Urho3D/DebugNew.h>
+#include <Urho3D/Navigation/Navigable.h>
 
 using namespace Ld37;
 using namespace Urho3D;
@@ -55,6 +60,7 @@ void DungeonMode::Start()
 
     scene_ = new Scene(context_);
     scene_->CreateComponent<Octree>();
+    scene_->CreateComponent<DebugRenderer>();
 
     cameraNode_ = scene_->CreateChild("Camera");
     Camera* camera = cameraNode_->CreateComponent<Camera>();
@@ -63,6 +69,11 @@ void DungeonMode::Start()
 
     SharedPtr<Viewport> viewport(new Viewport(context_, scene_, camera));
     renderer->SetViewport(0, viewport);
+
+    Node* lightNode = scene_->CreateChild("Light");
+    lightNode->SetDirection(Vector3(-0.1f, -0.1f, -1));
+    Light* light = lightNode->CreateComponent<Light>();
+    light->SetLightType(LIGHT_DIRECTIONAL);
 
     SpriteSheet2D* levelSheet = cache->GetResource<SpriteSheet2D>("Textures/LevelAssetsSheet.xml");
     Sprite2D* sprite = levelSheet->GetSprite("Spawner0");
@@ -88,25 +99,27 @@ void DungeonMode::Start()
     }
 
     SubscribeToEvent(E_KEYUP, URHO3D_HANDLER(DungeonMode, HandleKeyUp));
+
+    SubscribeToEvent(E_POSTRENDERUPDATE, URHO3D_HANDLER(DungeonMode, HandlePostRenderUpdate));
 }
 
 void DungeonMode::Update(float timestep)
 {
     const float MOVEMENT_FACTOR = 5.0f;
     Vector2 direction(0,0);
-    if(input_->GetKeyDown(KEY_UP))
+    if(input_->GetKeyDown(KEY_UP) || input_->GetKeyDown(KEY_W))
     {
         direction.y_ += 1;
     }
-    if(input_->GetKeyDown(KEY_DOWN))
+    if(input_->GetKeyDown(KEY_DOWN) || input_->GetKeyDown(KEY_S))
     {
         direction.y_ += -1;
     }
-    if(input_->GetKeyDown(KEY_LEFT))
+    if(input_->GetKeyDown(KEY_LEFT) || input_->GetKeyDown(KEY_A))
     {
         direction.x_ += -1;
     }
-    if(input_->GetKeyDown(KEY_RIGHT))
+    if(input_->GetKeyDown(KEY_RIGHT) || input_->GetKeyDown(KEY_D))
     {
         direction.x_ += 1;
     }
@@ -128,7 +141,6 @@ void DungeonMode::HandleKeyUp(Urho3D::StringHash type, Urho3D::VariantMap &data)
     GameMode* gameMode = GetSubsystem<GameMode>();
     Engine* engine = GetSubsystem<Engine>();
     Log* log = GetSubsystem<Log>();
-    log->Write(LOG_INFO, "Got a key up event");
     using namespace KeyUp;
     switch (data[P_KEY].GetInt())
     {
@@ -144,7 +156,40 @@ void DungeonMode::HandleKeyUp(Urho3D::StringHash type, Urho3D::VariantMap &data)
     }
 }
 
-void DungeonMode::HandlePause(Urho3D::StringHash type, Urho3D::VariantMap &data)
+void DungeonMode::HandlePostRenderUpdate(Urho3D::StringHash type, Urho3D::VariantMap &data)
 {
+    Map* map = GetSubsystem<Map>();
+    DebugRenderer* debug = scene_->GetOrCreateComponent<DebugRenderer>();
+    Log* log = GetSubsystem<Log>();
+
+    if (map->path_.Size())
+    {
+        Vector3 bias(0.f, 0.05f, 0.f);
+        Color pathColor(1.f, 0.f, 0.f);
+        debug->AddLine(
+            Vector3(37.12f, 26.88f, 1.f),
+            Vector3(map->path_[0].x_, map->path_[0].z_, 1.f),
+            pathColor
+        );
+
+        if (map->path_.Size() > 1)
+        {
+            for (int i = 0; i < map->path_.Size() - 1; ++i)
+            {
+                Vector3 test = map->path_[i];
+                Vector3 test2 = map->path_[i+1];
+                debug->AddLine(
+                    Vector3(map->path_[i].x_, map->path_[i].z_, 1.f),
+                    Vector3(map->path_[i+1].x_, map->path_[i+1].z_, 1.f),
+                    pathColor
+                );
+            }
+        }
+    }
+    else
+    {
+        log->Write(LOG_INFO, "Could not find path_");
+    }
 
 }
+

@@ -42,8 +42,8 @@ namespace Ld37
         /// Handle key up events
         void HandleKeyUp(Urho3D::StringHash type, Urho3D::VariantMap& data);
 
-        /// Handle pause input
-        void HandlePause(Urho3D::StringHash type, Urho3D::VariantMap& data);
+        /// Handle post render update events
+        void HandlePostRenderUpdate(Urho3D::StringHash type, Urho3D::VariantMap& data);
 
         /// The application context
         Urho3D::Context* context_;
