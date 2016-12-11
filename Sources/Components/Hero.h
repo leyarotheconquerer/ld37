@@ -14,7 +14,7 @@ namespace Urho3D
 
 namespace Ld37
 {
-    enum Mode {
+    enum HeroMode {
         MOVING = 0, SEEKING, ATTACKING, DYING
     };
 
@@ -58,7 +58,8 @@ namespace Ld37
         /// Time since the last path refresh
         float pathTick_ = 0.f;
 
-        Mode currentMode_ = MOVING;
+        /// Current activity of the hero
+        HeroMode currentMode_ = MOVING;
     };
 }
 

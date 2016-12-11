@@ -9,10 +9,11 @@
 
 namespace Urho3D
 {
-    class Scene;
-    class UIElement;
-    class Node;
     class Input;
+    class Node;
+    class Scene;
+    class Text;
+    class UIElement;
 }
 
 namespace Ld37
@@ -59,6 +60,11 @@ namespace Ld37
 
         /// Camera scene node
         Urho3D::Node* cameraNode_;
+
+        /// Hero Health UI Element
+        Urho3D::SharedPtr<Urho3D::Text> heroHealth_;
+        /// Hero scene node
+        Urho3D::Node* heroNode_;
 
         /// Node to play music and sound effects
         Urho3D::Node* musicNode_;

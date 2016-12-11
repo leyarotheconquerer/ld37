@@ -65,6 +65,11 @@ Node* Map::Generate(Scene* scene) {
     return ConstructMap(scene);
 }
 
+Urho3D::Vector<Urho3D::Vector2> Map::GetPath(Urho3D::Vector2 start, Urho3D::Vector3 end)
+{
+    Log* log = GetSubsystem<Log>();
+}
+
 Urho3D::Vector<int> Map::GenerateMap()
 {
     Log *log = GetSubsystem<Log>();

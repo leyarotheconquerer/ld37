@@ -12,7 +12,10 @@ using namespace Ld37;
 using namespace Urho3D;
 
 Hero::Hero(Urho3D::Context* context) :
-    Component(context)
+    Component(context),
+    health_(100),
+    defense_(1),
+    attack_(2)
 {
 }
 
@@ -32,9 +35,15 @@ void Hero::HandleUpdate(Urho3D::StringHash type, Urho3D::VariantMap &data)
     float timeStep = data[P_TIMESTEP].Get<float>();
     Node* heroNode = GetNode();
 
+    pathTick_ -= timeStep;
+
     switch (currentMode_)
     {
         case MOVING:
+            if (pathTick_ <= 0)
+            {
+                pathTick_ = PATH_TICK;
+            }
             break;
         case SEEKING:
             break;

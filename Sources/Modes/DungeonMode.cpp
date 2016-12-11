@@ -3,6 +3,7 @@
 //
 
 #include "DungeonMode.h"
+#include "Components/Hero.h"
 #include "Modes/MainMenuMode.h"
 #include "Subsystems/GameMode.h"
 #include "Subsystems/Map.h"
@@ -23,9 +24,10 @@
 #include <Urho3D/Navigation/NavigationMesh.h>
 #include <Urho3D/Resource/ResourceCache.h>
 #include <Urho3D/Scene/Scene.h>
-#include <Urho3D/UI/UIElement.h>
 #include <Urho3D/UI/UI.h>
+#include <Urho3D/UI/UIElement.h>
 #include <Urho3D/UI/UIEvents.h>
+#include <Urho3D/UI/Text.h>
 #include <Urho3D/Urho2D/AnimationSet2D.h>
 #include <Urho3D/Urho2D/AnimatedSprite2D.h>
 #include <Urho3D/Urho2D/Sprite2D.h>
@@ -43,28 +45,28 @@ DungeonMode::DungeonMode(Urho3D::Context *context) :
     Mode(context),
     context_(context)
 {
+    context->RegisterFactory<Hero>();
 }
 
 DungeonMode::~DungeonMode()
 {
 }
 
-void DungeonMode::Start()
-{
-    Graphics* graphics = GetSubsystem<Graphics>();
-    Log* log = GetSubsystem<Log>();
-    Renderer* renderer = GetSubsystem<Renderer>();
-    ResourceCache* cache = GetSubsystem<ResourceCache>();
-    UI* ui = GetSubsystem<UI>();
+void DungeonMode::Start() {
+    Graphics *graphics = GetSubsystem<Graphics>();
+    Log *log = GetSubsystem<Log>();
+    Renderer *renderer = GetSubsystem<Renderer>();
+    ResourceCache *cache = GetSubsystem<ResourceCache>();
+    UI *ui = GetSubsystem<UI>();
 
-    Map* map = new Map(context_);
+    Map *map = new Map(context_);
     context_->RegisterSubsystem(map);
 
     input_ = GetSubsystem<Input>();
 
     log->Write(LOG_INFO, "Starting dungeon mode");
 
-    XMLFile* hudFile = cache->GetResource<XMLFile>("UI/DungeonUI.xml");
+    XMLFile *hudFile = cache->GetResource<XMLFile>("UI/DungeonUI.xml");
     uiRoot_ = ui->LoadLayout(hudFile);
     ui->GetRoot()->AddChild(uiRoot_);
 
@@ -75,41 +77,44 @@ void DungeonMode::Start()
     cameraNode_ = scene_->CreateChild("Camera");
     Camera* camera = cameraNode_->CreateComponent<Camera>();
     camera->SetOrthographic(true);
-    camera->SetOrthoSize((float)graphics->GetHeight() * PIXEL_SIZE * 2);
+    camera->SetOrthoSize((float) graphics->GetHeight() * PIXEL_SIZE * 2);
 
     SharedPtr<Viewport> viewport(new Viewport(context_, scene_, camera));
     renderer->SetViewport(0, viewport);
 
-    Node* lightNode = scene_->CreateChild("Light");
+    Node *lightNode = scene_->CreateChild("Light");
     lightNode->SetDirection(Vector3(-0.1f, -0.1f, -1));
-    Light* light = lightNode->CreateComponent<Light>();
+    Light *light = lightNode->CreateComponent<Light>();
     light->SetLightType(LIGHT_DIRECTIONAL);
 
-    AnimationSet2D* heroAnim = cache->GetResource<AnimationSet2D>("Textures/StickDudeWiggle.scml");
+    Node *mapNode = map->Generate(scene_);
+    scene_->AddChild(mapNode);
 
-    Node* spriteNode = scene_->CreateChild("TestNode");
-    AnimatedSprite2D* animatedSprite = spriteNode->CreateComponent<AnimatedSprite2D>();
+    AnimationSet2D *heroAnim = cache->GetResource<AnimationSet2D>("Textures/StickDudeWiggle.scml");
+    heroNode_ = scene_->CreateChild("HeroNode");
+    AnimatedSprite2D *animatedSprite = heroNode_->CreateComponent<AnimatedSprite2D>();
     animatedSprite->SetAnimationSet(heroAnim);
     animatedSprite->SetLayer(21);
     animatedSprite->SetAnimation(heroAnim->GetAnimation(0));
-
-    Node* mapNode = map->Generate(scene_);
-    scene_->AddChild(mapNode);
+    Hero *hero = heroNode_->CreateComponent<Hero>();
+    Space *heroSpawn = map->GetHeroSpawn();
+    Vector2 spawnPos = heroSpawn->items.Front().pos;
+    heroNode_->SetPosition(Vector3(spawnPos.x_, spawnPos.y_, 0));
 
     musicNode_ = new Node(context_);
-    Sound* music = cache->GetResource<Sound>("Sounds/TestTheme2.ogg");
+    Sound *music = cache->GetResource<Sound>("Sounds/TestTheme2.ogg");
     music->SetLooped(true);
     SoundSource* musicSource = musicNode_->CreateComponent<SoundSource>();
     musicSource->Play(music);
 
     File file(context_, "testScene.xml", FILE_WRITE);
-    if(file.IsOpen())
-    {
+    if (file.IsOpen()) {
         scene_->SaveXML(file);
         file.Close();
     }
 
-    Button* mainMenu = (Button*)uiRoot_->GetChild(String("MainMenu"));
+    Button *mainMenu = (Button *) uiRoot_->GetChild(String("MainMenu"));
+    heroHealth_ = (Text *) uiRoot_->GetChild(String("HeroHealthText"), true);
 
     SubscribeToEvent(mainMenu, E_RELEASED, URHO3D_HANDLER(DungeonMode, HandleMainMenu));
 
@@ -142,6 +147,12 @@ void DungeonMode::Update(float timestep)
     if (direction != Vector2(0,0))
     {
         cameraNode_->Translate2D(direction * timestep * MOVEMENT_FACTOR);
+    }
+
+    Hero* hero = heroNode_->GetComponent<Hero>();
+    if (hero)
+    {
+        heroHealth_->SetText(String().AppendWithFormat("%d", hero->GetHeath()));
     }
 }
 
