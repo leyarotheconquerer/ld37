@@ -114,7 +114,7 @@ namespace Ld37
 
         /// Gets a list of points forming a path from the start to the end
         /// List is empty if no path exists
-        Urho3D::Vector<Urho3D::Vector2> GetPath(Urho3D::Vector2 start, Urho3D::Vector3 end);
+        Urho3D::PODVector<Urho3D::Vector2> GetPath(Urho3D::Vector2 start, Urho3D::Vector3 end);
 
         /// Temp path debugger
         Urho3D::PODVector<Urho3D::Vector3> path_;

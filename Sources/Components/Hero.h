@@ -18,7 +18,8 @@ namespace Ld37
         MOVING = 0, SEEKING, ATTACKING, DYING
     };
 
-    const static float PATH_TICK = 1.0f;
+    const float PATH_TICK = 1.0f;
+    const float HERO_MOVEMENT_RATE = 1.0f;
 
     /// Component enabling hero behavior
     class Hero : public Urho3D::Component
@@ -54,6 +55,11 @@ namespace Ld37
 
         /// Attack characteristic of the hero
         int attack_;
+
+    public:
+        /// The hero's journey
+        Urho3D::PODVector<Urho3D::Vector2> currentPath_;
+    private:
 
         /// Time since the last path refresh
         float pathTick_ = 0.f;

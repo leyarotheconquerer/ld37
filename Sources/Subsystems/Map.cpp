@@ -65,9 +65,36 @@ Node* Map::Generate(Scene* scene) {
     return ConstructMap(scene);
 }
 
-Urho3D::Vector<Urho3D::Vector2> Map::GetPath(Urho3D::Vector2 start, Urho3D::Vector3 end)
+Urho3D::PODVector<Urho3D::Vector2> Map::GetPath(Urho3D::Vector2 start, Urho3D::Vector3 end)
 {
     Log* log = GetSubsystem<Log>();
+    PODVector<Vector3> path;
+
+    navMesh_->FindPath(path, Vector3(start.x_, 1.f, start.y_), Vector3(end.x_, 1.f, end.y_));
+
+    if (path.Size())
+    {
+        log->Write(LOG_INFO, String("Found path from")
+            .AppendWithFormat(" (%f, %f) to (%f, %f)",
+                start.x_, start.y_, end.x_, end.y_
+            )
+        );
+        PODVector<Vector2> returnPath;
+        for(auto i = path.Begin(); i != path.End(); i++)
+        {
+            returnPath.Push(Vector2(i->x_, i->z_));
+        }
+        return returnPath;
+    }
+    else
+    {
+        log->Write(LOG_INFO, String("No path found from")
+            .AppendWithFormat(" (%d, %d) to (%d, %d)",
+                              start.x_, start.y_, end.x_, end.y_
+            )
+        );
+        return PODVector<Vector2>();
+    }
 }
 
 Urho3D::Vector<int> Map::GenerateMap()

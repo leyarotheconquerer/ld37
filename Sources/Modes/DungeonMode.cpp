@@ -94,7 +94,7 @@ void DungeonMode::Start() {
     heroNode_ = scene_->CreateChild("HeroNode");
     AnimatedSprite2D *animatedSprite = heroNode_->CreateComponent<AnimatedSprite2D>();
     animatedSprite->SetAnimationSet(heroAnim);
-    animatedSprite->SetLayer(21);
+    animatedSprite->SetLayer(15);
     animatedSprite->SetAnimation(heroAnim->GetAnimation(0));
     Hero *hero = heroNode_->CreateComponent<Hero>();
     Space *heroSpawn = map->GetHeroSpawn();
@@ -194,28 +194,28 @@ void DungeonMode::HandleMainMenu(Urho3D::StringHash type, Urho3D::VariantMap &da
 }
 
 void DungeonMode::HandlePostRenderUpdate(Urho3D::StringHash type, Urho3D::VariantMap &data) {
-    Map *map = GetSubsystem<Map>();
     if (!scene_) return;
     DebugRenderer *debug = scene_->GetComponent<DebugRenderer>();
     Log *log = GetSubsystem<Log>();
-    if (map && map->path_.Size())
+    Hero* hero = heroNode_->GetComponent<Hero>();
+    if(hero && hero->currentPath_.Size())
     {
         Vector3 bias(0.f, 0.05f, 0.f);
         Color pathColor(1.f, 0.f, 0.f);
         debug->AddLine(
-            Vector3(37.12f, 26.88f, 1.f),
-            Vector3(map->path_[0].x_, map->path_[0].z_, 1.f),
+            Vector3(heroNode_->GetPosition()),
+            Vector3(hero->currentPath_[0].x_, hero->currentPath_[0].y_, 1.f),
             pathColor
         );
 
-        if (map->path_.Size() > 1)
+        if (hero->currentPath_.Size() > 1)
         {
-            for (int i = 0; i < map->path_.Size() - 1; ++i) {
-                Vector3 test = map->path_[i];
-                Vector3 test2 = map->path_[i + 1];
+            for (int i = 0; i < hero->currentPath_.Size() - 1; ++i) {
+                Vector3 test = hero->currentPath_[i];
+                Vector3 test2 = hero->currentPath_[i + 1];
                 debug->AddLine(
-                    Vector3(map->path_[i].x_, map->path_[i].z_, 1.f),
-                    Vector3(map->path_[i + 1].x_, map->path_[i + 1].z_, 1.f),
+                    Vector3(hero->currentPath_[i].x_, hero->currentPath_[i].y_, 1.f),
+                    Vector3(hero->currentPath_[i + 1].x_, hero->currentPath_[i + 1].y_, 1.f),
                     pathColor
                 );
             }
