@@ -28,6 +28,8 @@ endif()
 set (CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/Cmake/Modules)
 # Include Urho3D CMake common module
 include (Urho3D-CMake-Common)
+# Enable C++11, because inline functions
+set (CMAKE_CXX_FLAGS "--std=c++11")
 # Include headers
 include_directories(Sources)
 # Define source files

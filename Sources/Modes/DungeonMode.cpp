@@ -5,6 +5,9 @@
 #include "DungeonMode.h"
 #include "Modes/MainMenuMode.h"
 #include "Subsystems/GameMode.h"
+#include "Subsystems/Map.h"
+#include <Urho3D/Core/Context.h>
+#include <Urho3D/Engine/Engine.h>
 #include <Urho3D/Input/InputEvents.h>
 #include <Urho3D/Graphics/Camera.h>
 #include <Urho3D/Graphics/Graphics.h>
@@ -40,6 +43,9 @@ void DungeonMode::Start()
     Renderer* renderer = GetSubsystem<Renderer>();
     ResourceCache* cache = GetSubsystem<ResourceCache>();
 
+    Map* map = new Map(context_);
+    context_->RegisterSubsystem(map);
+
     log->Write(LOG_INFO, "Starting dungeon mode");
 
     scene_ = new Scene(context_);
@@ -59,6 +65,9 @@ void DungeonMode::Start()
     Node* spriteNode = scene_->CreateChild("TestNode");
     StaticSprite2D* staticSprite = spriteNode->CreateComponent<StaticSprite2D>();
     staticSprite->SetSprite(sprite);
+
+    Node* mapNode = map->Generate();
+    scene_->AddChild(mapNode);
 
     File file(context_, "testScene.xml", FILE_WRITE);
     if(file.IsOpen())
@@ -82,6 +91,7 @@ void DungeonMode::Stop()
 
 void DungeonMode::HandleKeyUp(Urho3D::StringHash type, Urho3D::VariantMap &data) {
     GameMode* gameMode = GetSubsystem<GameMode>();
+    Engine* engine = GetSubsystem<Engine>();
     Log* log = GetSubsystem<Log>();
     log->Write(LOG_INFO, "Got a key up event");
     using namespace KeyUp;
@@ -90,6 +100,9 @@ void DungeonMode::HandleKeyUp(Urho3D::StringHash type, Urho3D::VariantMap &data)
         case KEY_ESCAPE:
             gameMode->RegisterMode<MainMenuMode>();
             gameMode->Next<MainMenuMode>();
+            break;
+        case KEY_Q:
+            engine->Exit();
             break;
         default:
             break;
