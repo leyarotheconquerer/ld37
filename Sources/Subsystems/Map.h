@@ -29,6 +29,15 @@ namespace Ld37
         Urho3D::Node* Generate();
 
     private:
+        /// Generates a map
+        void GenerateMap();
+
+        /// Constructs a pre-generated map
+        Urho3D::Node* ConstructMap();
+
+        /// Generates a point on the side of map
+        Urho3D::IntVector2 GenerateSidePoint(Urho3D::IntVector2 size, int side);
+
         /// Calculates the shortest path between a start and an end point
         /// Returns false if no path is found
         bool AStar(Urho3D::Vector<int> &map, Urho3D::IntVector2 size,
@@ -43,6 +52,10 @@ namespace Ld37
 
         /// The application context
         Urho3D::Context* context_;
+
+        /// A numerical representation of the map
+        Urho3D::Vector<int> map_;
+        Urho3D::IntVector2 size_;
 
         /// List of nodes that make up the map
         Urho3D::Vector<Urho3D::SharedPtr<Urho3D::Node> > nodes_;
