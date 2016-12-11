@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<element type="Window">
+    <attribute name="Name" value="HUD" />
+    <attribute name="Horiz Alignment" value="Left" />
+    <attribute name="Vert Alignment" value="Bottom" />
+    <attribute name="Size" value="180 100" />
+    <attribute name="Layout Mode" value="Vertical" />
+    <attribute name="Layout Spacing" value="6" />
+    <attribute name="Layout Border" value="12 12 12 12" />
+    <element>
+        <attribute name="Layout Mode" value="Horizontal" />
+        <attribute name="Vert Alignment" value="Top" />
+        <element type="Text">
+            <attribute name="Name" value="ItemLabel" />
+            <attribute name="Text" value="Current Item: " />
+            <attribute name="Text Alignment" value="Left" />
+        </element>
+        <element type="Text">
+            <attribute name="Name" value="ItemText" />
+            <attribute name="Text" value="<none>" />
+            <attribute name="Text Alignment" value="Right" />
+        </element>
+    </element>
+    <element>
+        <attribute name="Layout Mode" value="Horizontal" />
+        <attribute name="Vert Alignment" value="Top" />
+        <element type="Text">
+            <attribute name="Name" value="HeroHealthLabel" />
+            <attribute name="Text" value="Hero Health: " />
+            <attribute name="Text Alignment" value="Left" />
+        </element>
+        <element type="Text">
+            <attribute name="Name" value="HeroHealthText" />
+            <attribute name="Text" value="0" />
+            <attribute name="Text Alignment" value="Right" />
+        </element>
+    </element>
+    <element type="Button">
+        <attribute name="Name" value="MainMenu" />
+        <attribute name="Size" value="100 40" />
+        <attribute name="Horiz Alignment" value="Center" />
+        <element type="Text">
+            <attribute name="Text" value="Main Menu" />
+            <attribute name="Horiz Alignment" value="Center" />
+            <attribute name="Vert Alignment" value="Center" />
+        </element>
+    </element>
+</element>

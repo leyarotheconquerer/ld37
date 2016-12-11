@@ -94,6 +94,24 @@ namespace Ld37
             return GetSpaceIndex(pos);
         }
 
+        /// Get the hero's spawn space
+        Space* GetHeroSpawn()
+        {
+            return &map_[heroSpawn_];
+        }
+
+        /// Get the hero's exit space
+        Space* GetHeroExit()
+        {
+            return &map_[heroExit_];
+        }
+
+        /// Get the player's spawn space
+        Space* GetPlayerSpawn()
+        {
+            return &map_[playerSpawn_];
+        }
+
         /// Temp path debugger
         Urho3D::PODVector<Urho3D::Vector3> path_;
 
@@ -126,7 +144,6 @@ namespace Ld37
         Urho3D::Context* context_;
 
         /// The map data of the map
-//        Urho3D::Vector<int> map_;
         Urho3D::Vector<Space> map_;
         Urho3D::IntVector2 size_;
 

@@ -26,6 +26,8 @@
 #include <Urho3D/UI/UIElement.h>
 #include <Urho3D/UI/UI.h>
 #include <Urho3D/UI/UIEvents.h>
+#include <Urho3D/Urho2D/AnimationSet2D.h>
+#include <Urho3D/Urho2D/AnimatedSprite2D.h>
 #include <Urho3D/Urho2D/Sprite2D.h>
 #include <Urho3D/Urho2D/SpriteSheet2D.h>
 #include <Urho3D/Urho2D/StaticSprite2D.h>
@@ -83,12 +85,13 @@ void DungeonMode::Start()
     Light* light = lightNode->CreateComponent<Light>();
     light->SetLightType(LIGHT_DIRECTIONAL);
 
-    SpriteSheet2D* levelSheet = cache->GetResource<SpriteSheet2D>("Textures/LevelAssetsSheet.xml");
-    Sprite2D* sprite = levelSheet->GetSprite("Spawner0");
+    AnimationSet2D* heroAnim = cache->GetResource<AnimationSet2D>("Textures/StickDudeWiggle.scml");
 
     Node* spriteNode = scene_->CreateChild("TestNode");
-    StaticSprite2D* staticSprite = spriteNode->CreateComponent<StaticSprite2D>();
-    staticSprite->SetSprite(sprite);
+    AnimatedSprite2D* animatedSprite = spriteNode->CreateComponent<AnimatedSprite2D>();
+    animatedSprite->SetAnimationSet(heroAnim);
+    animatedSprite->SetLayer(21);
+    animatedSprite->SetAnimation(heroAnim->GetAnimation(0));
 
     Node* mapNode = map->Generate(scene_);
     scene_->AddChild(mapNode);

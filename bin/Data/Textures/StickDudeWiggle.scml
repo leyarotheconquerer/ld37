@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<spriter_data scml_version="1.0" generator="BrashMonkey Spriter" generator_version="r9">
+    <folder id="0" name="Textures">
+        <file id="0" name="StickDudeSword.png" width="64" height="64" pivot_x="0" pivot_y="1"/>
+        <file id="1" name="StickDudeRightLeg.png" width="64" height="64" pivot_x="0" pivot_y="1"/>
+        <file id="2" name="StickDudeRightArm.png" width="64" height="64" pivot_x="0" pivot_y="1"/>
+        <file id="3" name="StickDudeLeftLeg.png" width="64" height="64" pivot_x="0" pivot_y="1"/>
+        <file id="4" name="StickDudeLeftArm.png" width="64" height="64" pivot_x="0" pivot_y="1"/>
+        <file id="5" name="StickDudeBody.png" width="64" height="64" pivot_x="0" pivot_y="1"/>
+    </folder>
+    <entity id="0" name="entity_000">
+        <animation id="0" name="Wiggle" length="500" interval="100">
+            <mainline>
+                <key id="0">
+                    <object_ref id="0" timeline="0" key="0" z_index="0"/>
+                    <object_ref id="1" timeline="2" key="0" z_index="1"/>
+                    <object_ref id="2" timeline="3" key="0" z_index="2"/>
+                    <object_ref id="3" timeline="4" key="0" z_index="3"/>
+                    <object_ref id="4" timeline="5" key="0" z_index="4"/>
+                    <object_ref id="5" timeline="1" key="0" z_index="5"/>
+                </key>
+                <key id="1" time="199">
+                    <object_ref id="0" timeline="0" key="1" z_index="0"/>
+                    <object_ref id="1" timeline="2" key="1" z_index="1"/>
+                    <object_ref id="2" timeline="3" key="1" z_index="2"/>
+                    <object_ref id="3" timeline="4" key="2" z_index="3"/>
+                    <object_ref id="4" timeline="5" key="1" z_index="4"/>
+                    <object_ref id="5" timeline="1" key="1" z_index="5"/>
+                </key>
+                <key id="2" time="400">
+                    <object_ref id="0" timeline="0" key="2" z_index="0"/>
+                    <object_ref id="1" timeline="2" key="2" z_index="1"/>
+                    <object_ref id="2" timeline="3" key="2" z_index="2"/>
+                    <object_ref id="3" timeline="4" key="4" z_index="3"/>
+                    <object_ref id="4" timeline="5" key="2" z_index="4"/>
+                    <object_ref id="5" timeline="1" key="2" z_index="5"/>
+                </key>
+            </mainline>
+            <timeline id="0" name="StickDudeRightLeg">
+                <key id="0">
+                    <object folder="0" file="1" x="-17.883817" y="47.651452"/>
+                </key>
+                <key id="1" time="199" spin="-1">
+                    <object folder="0" file="1" x="-20.27698" y="49.018974" angle="3.479714" scale_x="1" scale_y="1"/>
+                </key>
+                <key id="2" time="400" spin="-1">
+                    <object folder="0" file="1" x="-18.135729" y="47.795402" angle="0.366286"/>
+                </key>
+            </timeline>
+            <timeline id="1" name="StickDudeSword">
+                <key id="0">
+                    <object folder="0" file="0" x="-19.477178" y="50.186722"/>
+                </key>
+                <key id="1" time="199" spin="-1">
+                    <object folder="0" file="0" x="-41.35752" y="20.639713" angle="42.49115"/>
+                </key>
+                <key id="2" time="400" spin="-1">
+                    <object folder="0" file="0" x="-21.780372" y="47.076511" angle="4.472753"/>
+                </key>
+            </timeline>
+            <timeline id="2" name="StickDudeRightArm">
+                <key id="0">
+                    <object folder="0" file="2" x="-19.435685" y="50.136929"/>
+                </key>
+                <key id="1" time="199" spin="-1">
+                    <object folder="0" file="2" x="-33.110898" y="37.829237" angle="23.726362"/>
+                </key>
+                <key id="2" time="400" spin="-1">
+                    <object folder="0" file="2" x="-20.875181" y="48.841383" angle="2.497512"/>
+                </key>
+            </timeline>
+            <timeline id="3" name="StickDudeLeftLeg">
+                <key id="0" spin="-1">
+                    <object folder="0" file="3" x="-16.087137" y="47.423237"/>
+                </key>
+                <key id="1" time="199">
+                    <object folder="0" file="3" x="-8.052949" y="50.84204" angle="350.363555"/>
+                </key>
+                <key id="2" time="400">
+                    <object folder="0" file="3" x="-15.241433" y="47.783111" angle="358.985637"/>
+                </key>
+            </timeline>
+            <timeline id="4" name="StickDudeLeftArm">
+                <key id="0">
+                    <object folder="0" file="4" x="-16.60166" y="47.290456"/>
+                </key>
+                <key id="1" time="199">
+                    <object folder="0" file="4" x="-32.157215" y="38.059687" pivot_x="0" pivot_y="1" angle="27.813779"/>
+                </key>
+                <key id="2" time="199" spin="-1">
+                    <object folder="0" file="4" x="-30.798684" y="42.962325" pivot_x="0.054518" pivot_y="1.057849" angle="27.813779"/>
+                </key>
+                <key id="3" time="400" spin="-1">
+                    <object folder="0" file="4" x="-14.943599" y="50.194519" angle="2.927766"/>
+                </key>
+                <key id="4" time="400" spin="-1">
+                    <object folder="0" file="4" x="-18.239087" y="46.318797" angle="2.927766"/>
+                </key>
+            </timeline>
+            <timeline id="5" name="StickDudeBody">
+                <key id="0" spin="0">
+                    <object folder="0" file="5" x="-17.66805" y="46.568465"/>
+                </key>
+                <key id="1" time="199" spin="0">
+                    <object folder="0" file="5" x="-17.326169" y="48.106926"/>
+                </key>
+                <key id="2" time="400" spin="0">
+                    <object folder="0" file="5" x="-17.632062" y="46.730408"/>
+                </key>
+            </timeline>
+        </animation>
+    </entity>
+</spriter_data>
