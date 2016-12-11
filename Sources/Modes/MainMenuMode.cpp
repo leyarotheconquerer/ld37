@@ -43,6 +43,7 @@ MainMenuMode::~MainMenuMode()
 
 void MainMenuMode::Start()
 {
+    // Load relevant subsystems
     Input* input = GetSubsystem<Input>();
     Graphics* graphics = GetSubsystem<Graphics>();
     Log* log = GetSubsystem<Log>();
@@ -52,29 +53,17 @@ void MainMenuMode::Start()
 
     log->Write(LOG_INFO, "Starting Main Menu Mode");
 
-    XMLFile* style = cache->GetResource<XMLFile>("UI/Ld37Style.xml");
-    ui->GetRoot()->SetDefaultStyle(style);
-
-    SharedPtr<Cursor> cursor(new Cursor(context_));
-    cursor->SetStyleAuto();
-    ui->SetCursor(cursor);
-    input->SetMouseVisible(true);
-    input->SetMousePosition(IntVector2(
-        graphics->GetWidth() / 2,
-        graphics->GetHeight() / 2
-    ));
-
+    // Load the main menu UI
     XMLFile* mainMenu = cache->GetResource<XMLFile>("UI/MainMenu.xml");
     uiRoot_ = ui->LoadLayout(mainMenu);
     ui->GetRoot()->AddChild(uiRoot_);
 
+    // Load the main menu scene
     scene_ = new Scene(context_);
     SharedPtr<File> sceneFile = cache->GetFile("Scene/MainMenu.xml");
     bool result = scene_->LoadXML(*sceneFile);
 
-    Zone* zone = renderer->GetDefaultZone();
-    zone->SetFogColor(Color(.36f, .38f, .47f, 1.f));
-
+    // Add the camera
     cameraNode_ = scene_->CreateChild("Camera");
     Camera* camera = cameraNode_->CreateComponent<Camera>();
     camera->SetOrthographic(true);
@@ -83,6 +72,7 @@ void MainMenuMode::Start()
     SharedPtr<Viewport> viewport(new Viewport(context_, scene_, camera));
     renderer->SetViewport(0, viewport);
 
+    // Start the main menu music
     Sound* music = cache->GetResource<Sound>("Sounds/TestTheme.ogg");
     if (music)
     {
@@ -93,6 +83,7 @@ void MainMenuMode::Start()
         soundSource->SetGain(0.75f);
     }
 
+    // Subscribe to the button events
     Button* play = (Button*)uiRoot_->GetChild(String("Play"));
     Button* exit = (Button*)uiRoot_->GetChild(String("Exit"));
 
@@ -123,6 +114,7 @@ void MainMenuMode::Stop()
 void MainMenuMode::HandlePlay(Urho3D::StringHash type, Urho3D::VariantMap &data)
 {
     GameMode* gameMode = GetSubsystem<GameMode>();
+    gameMode->RegisterMode<DungeonMode>();
     gameMode->Next<DungeonMode>();
 }
 

@@ -7,6 +7,13 @@
 
 #include "Subsystems/Mode.h"
 
+namespace Urho3D
+{
+    class Scene;
+    class UIElement;
+    class Node;
+}
+
 namespace Ld37
 {
     /// Dungeon game mode
@@ -31,6 +38,9 @@ namespace Ld37
         virtual void Stop();
 
     private:
+        /// Handle key up events
+        void HandleKeyUp(Urho3D::StringHash type, Urho3D::VariantMap& data);
+
         /// Handle pause input
         void HandlePause(Urho3D::StringHash type, Urho3D::VariantMap& data);
 
@@ -44,7 +54,7 @@ namespace Ld37
         Urho3D::SharedPtr<Urho3D::UIElement> uiRoot_;
 
         /// Camera scene node
-        Urho3D::Node* camera_;
+        Urho3D::Node* cameraNode_;
 
         /// Node to play music and sound effects
         Urho3D::Node* musicNode_;
