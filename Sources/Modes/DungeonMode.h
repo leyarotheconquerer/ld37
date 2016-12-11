@@ -42,6 +42,9 @@ namespace Ld37
         /// Handle key up events
         void HandleKeyUp(Urho3D::StringHash type, Urho3D::VariantMap& data);
 
+        /// Handle main menu button events
+        void HandleMainMenu(Urho3D::StringHash type, Urho3D::VariantMap& data);
+
         /// Handle post render update events
         void HandlePostRenderUpdate(Urho3D::StringHash type, Urho3D::VariantMap& data);
 

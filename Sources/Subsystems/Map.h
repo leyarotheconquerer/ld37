@@ -78,6 +78,22 @@ namespace Ld37
         /// Generates a new map and returns the root node of the result
         Urho3D::Node* Generate(Urho3D::Scene* scene_);
 
+        /// Get the space at the given indices
+        Space* GetSpaceIndex(const Urho3D::IntVector2 i)
+        {
+            return &map_[i.y_ * size_.x_ + i.x_];
+        }
+
+        /// Get the space at the given world coordinates
+        Space* GetSpaceWorld(const Urho3D::Vector2 i)
+        {
+            Urho3D::IntVector2 pos = {
+                (int)(i.x_ / ROOM_SIZE),
+                (int)(i.y_ / ROOM_SIZE),
+            };
+            return GetSpaceIndex(pos);
+        }
+
         /// Temp path debugger
         Urho3D::PODVector<Urho3D::Vector3> path_;
 

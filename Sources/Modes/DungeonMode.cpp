@@ -24,12 +24,15 @@
 #include <Urho3D/Resource/ResourceCache.h>
 #include <Urho3D/Scene/Scene.h>
 #include <Urho3D/UI/UIElement.h>
+#include <Urho3D/UI/UI.h>
+#include <Urho3D/UI/UIEvents.h>
 #include <Urho3D/Urho2D/Sprite2D.h>
 #include <Urho3D/Urho2D/SpriteSheet2D.h>
 #include <Urho3D/Urho2D/StaticSprite2D.h>
 #include <Urho3D/Urho2D/Drawable2D.h>
 #include <Urho3D/DebugNew.h>
 #include <Urho3D/Navigation/Navigable.h>
+#include <Urho3D/UI/Button.h>
 
 using namespace Ld37;
 using namespace Urho3D;
@@ -50,6 +53,7 @@ void DungeonMode::Start()
     Log* log = GetSubsystem<Log>();
     Renderer* renderer = GetSubsystem<Renderer>();
     ResourceCache* cache = GetSubsystem<ResourceCache>();
+    UI* ui = GetSubsystem<UI>();
 
     Map* map = new Map(context_);
     context_->RegisterSubsystem(map);
@@ -57,6 +61,10 @@ void DungeonMode::Start()
     input_ = GetSubsystem<Input>();
 
     log->Write(LOG_INFO, "Starting dungeon mode");
+
+    XMLFile* hudFile = cache->GetResource<XMLFile>("UI/DungeonUI.xml");
+    uiRoot_ = ui->LoadLayout(hudFile);
+    ui->GetRoot()->AddChild(uiRoot_);
 
     scene_ = new Scene(context_);
     scene_->CreateComponent<Octree>();
@@ -98,6 +106,10 @@ void DungeonMode::Start()
         file.Close();
     }
 
+    Button* mainMenu = (Button*)uiRoot_->GetChild(String("MainMenu"));
+
+    SubscribeToEvent(mainMenu, E_RELEASED, URHO3D_HANDLER(DungeonMode, HandleMainMenu));
+
     SubscribeToEvent(E_KEYUP, URHO3D_HANDLER(DungeonMode, HandleKeyUp));
 
     SubscribeToEvent(E_POSTRENDERUPDATE, URHO3D_HANDLER(DungeonMode, HandlePostRenderUpdate));
@@ -132,8 +144,14 @@ void DungeonMode::Update(float timestep)
 
 void DungeonMode::Stop()
 {
+    UI* ui = GetSubsystem<UI>();
+    ui->GetRoot()->RemoveChild(uiRoot_, 0);
+
     SoundSource* musicSource = musicNode_->GetComponent<SoundSource>();
     musicSource->Stop();
+
+    delete scene_;
+    scene_ = NULL;
 }
 
 void DungeonMode::HandleKeyUp(Urho3D::StringHash type, Urho3D::VariantMap &data)
@@ -156,13 +174,17 @@ void DungeonMode::HandleKeyUp(Urho3D::StringHash type, Urho3D::VariantMap &data)
     }
 }
 
-void DungeonMode::HandlePostRenderUpdate(Urho3D::StringHash type, Urho3D::VariantMap &data)
+void DungeonMode::HandleMainMenu(Urho3D::StringHash type, Urho3D::VariantMap &data)
 {
-    Map* map = GetSubsystem<Map>();
-    DebugRenderer* debug = scene_->GetOrCreateComponent<DebugRenderer>();
-    Log* log = GetSubsystem<Log>();
+    GetSubsystem<GameMode>()->Next<MainMenuMode>();
+}
 
-    if (map->path_.Size())
+void DungeonMode::HandlePostRenderUpdate(Urho3D::StringHash type, Urho3D::VariantMap &data) {
+    Map *map = GetSubsystem<Map>();
+    if (!scene_) return;
+    DebugRenderer *debug = scene_->GetComponent<DebugRenderer>();
+    Log *log = GetSubsystem<Log>();
+    if (map && map->path_.Size())
     {
         Vector3 bias(0.f, 0.05f, 0.f);
         Color pathColor(1.f, 0.f, 0.f);
@@ -174,22 +196,18 @@ void DungeonMode::HandlePostRenderUpdate(Urho3D::StringHash type, Urho3D::Varian
 
         if (map->path_.Size() > 1)
         {
-            for (int i = 0; i < map->path_.Size() - 1; ++i)
-            {
+            for (int i = 0; i < map->path_.Size() - 1; ++i) {
                 Vector3 test = map->path_[i];
-                Vector3 test2 = map->path_[i+1];
+                Vector3 test2 = map->path_[i + 1];
                 debug->AddLine(
                     Vector3(map->path_[i].x_, map->path_[i].z_, 1.f),
-                    Vector3(map->path_[i+1].x_, map->path_[i+1].z_, 1.f),
+                    Vector3(map->path_[i + 1].x_, map->path_[i + 1].z_, 1.f),
                     pathColor
                 );
             }
         }
-    }
-    else
-    {
+    } else {
         log->Write(LOG_INFO, "Could not find path_");
     }
-
 }
 
