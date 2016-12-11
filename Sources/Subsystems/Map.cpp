@@ -5,6 +5,7 @@
 #include "Map.h"
 #include <Urho3D/IO/Log.h>
 #include <Urho3D/Scene/Node.h>
+#include <Urho3D/Engine/Engine.h>
 
 using namespace Ld37;
 using namespace Urho3D;
@@ -54,124 +55,142 @@ Node* Map::Generate() {
     int minSize = 1, maxSize = 30;
     float checkpointDensity = .05;
 
-    // Generate a randomly sized map
-    IntVector2 size({
-        (Rand() % (maxSize - minSize)) + minSize,
-        (Rand() % (maxSize - minSize)) + minSize
-    });
-    Vector<int> map(size.x_ * size.y_, EMPTY);
-    log->Write(LOG_INFO, String("Generating map")
-        .AppendWithFormat(" (%d, %d)", size.x_, size.y_)
-        .Append("\n======================================="));
+    bool doomCounter = 3;
+    while (doomCounter > 0)
+    {
+        // Generate a randomly sized map
+        IntVector2 size({
+                            (Rand() % (maxSize - minSize)) + minSize,
+                            (Rand() % (maxSize - minSize)) + minSize
+                        });
+        Vector<int> map(size.x_ * size.y_, EMPTY);
+        log->Write(LOG_INFO, String("Generating map")
+            .AppendWithFormat(" (%d, %d)", size.x_, size.y_)
+            .Append("\n======================================="));
 
-    // Generate an exit point (0-3, NESW)
-    int side = Rand() % 4;
-    IntVector2 exit;
-    switch (side) {
-        case 0:
-            exit.x_ = Rand() % size.x_;
-            exit.y_ = 0;
-            break;
-        case 1:
-            exit.x_ = size.x_ - 1;
-            exit.y_ = Rand() % size.y_;
-            break;
-        case 2:
-            exit.x_ = Rand() % size.x_;
-            exit.y_  = size.y_ - 1;
-            break;
-        case 3:
-            exit.x_ = 0;
-            exit.y_ = Rand() % size.y_;
-            break;
-        default:
-            assert(false); // Never reach this
-            break;
-    }
-    map[exit.y_ * size.x_ + exit.x_] = EXITPOINT;
-    log->Write(LOG_INFO, String("Exit point at")
-        .AppendWithFormat(" (%d, %d)", exit.x_, exit.y_));
-
-    // Generate a number of expected points in proportion to the checkpoint density
-    int expectedCount = (int) ((size.x_ * size.y_) * checkpointDensity + 1);
-    log->Write(LOG_INFO, String("Expected points")
-        .AppendWithFormat(" = %d", expectedCount));
-    // Always generate at least one point
-    assert(expectedCount > 0);
-    Vector<ExpectedPoint> expectedPoints(expectedCount);
-    for (int i = 0; i < expectedCount; i++) {
-        IntVector2 p({
-            Rand() % size.x_,
-            Rand() % size.y_
-        });
-        IntVector2 d({
-            exit.x_ - p.x_,
-            exit.y_ - p.y_
-         });
-        expectedPoints[i] = {
-            p, (int) Sqrt<float>(d.x_ * d.x_ + d.y_ * d.y_)
-        };
-        if (map[p.y_ * size.x_ + p.x_] == EMPTY) {
-            map[p.y_ * size.x_ + p.x_] = CHECKPOINT;
-            log->Write(LOG_INFO, String("Check point at")
-                .AppendWithFormat(" (%d, %d)", p.x_, p.y_));
-        } else {
-            log->Write(LOG_INFO, String("Failure point at")
-                .AppendWithFormat(" (%d, %d)", p.x_, p.y_));
+        // Generate an exit point (0-3, NESW)
+        int side = Rand() % 4;
+        IntVector2 exit;
+        switch (side) {
+            case 0:
+                exit.x_ = Rand() % size.x_;
+                exit.y_ = 0;
+                break;
+            case 1:
+                exit.x_ = size.x_ - 1;
+                exit.y_ = Rand() % size.y_;
+                break;
+            case 2:
+                exit.x_ = Rand() % size.x_;
+                exit.y_  = size.y_ - 1;
+                break;
+            case 3:
+                exit.x_ = 0;
+                exit.y_ = Rand() % size.y_;
+                break;
+            default:
+                assert(false); // Never reach this
+                break;
         }
-    }
+        map[exit.y_ * size.x_ + exit.x_] = EXITPOINT;
+        log->Write(LOG_INFO, String("Exit point at")
+            .AppendWithFormat(" (%d, %d)", exit.x_, exit.y_));
 
-    // Sort the checkpoints by distance from the exit
-    // Look at me using an inline comparison function
-    // FIRST!!!
-    // Woohoo!
-    Sort(expectedPoints.Begin(), expectedPoints.End(),
-         [](const ExpectedPoint& a, const ExpectedPoint& b){
-             return a.dist < b.dist;
-         }
-    );
-    expectedPoints.Push({exit, 0});
+        // Generate a number of expected points in proportion to the checkpoint density
+        int expectedCount = (int) ((size.x_ * size.y_) * checkpointDensity + 1);
+        log->Write(LOG_INFO, String("Expected points")
+            .AppendWithFormat(" = %d", expectedCount));
+        // Always generate at least one point
+        assert(expectedCount > 0);
+        Vector<ExpectedPoint> expectedPoints(expectedCount);
+        for (int i = 0; i < expectedCount; i++) {
+            IntVector2 p({
+                             Rand() % size.x_,
+                             Rand() % size.y_
+                         });
+            IntVector2 d({
+                             exit.x_ - p.x_,
+                             exit.y_ - p.y_
+                         });
+            expectedPoints[i] = {
+                p, (int) Sqrt<float>(d.x_ * d.x_ + d.y_ * d.y_)
+            };
+            if (map[p.y_ * size.x_ + p.x_] == EMPTY) {
+                map[p.y_ * size.x_ + p.x_] = CHECKPOINT;
+                log->Write(LOG_INFO, String("Check point at")
+                    .AppendWithFormat(" (%d, %d)", p.x_, p.y_));
+            } else {
+                log->Write(LOG_INFO, String("Failure point at")
+                    .AppendWithFormat(" (%d, %d)", p.x_, p.y_));
+            }
+        }
 
-    logMap(log, map, size.x_, size.y_);
+        // Sort the checkpoints by distance from the exit
+        // Look at me using an inline comparison function
+        // FIRST!!!
+        // Woohoo!
+        Sort(expectedPoints.Begin(), expectedPoints.End(),
+             [](const ExpectedPoint& a, const ExpectedPoint& b){
+                 return a.dist < b.dist;
+             }
+        );
+        expectedPoints.Push({exit, 0});
 
-    // Iterate through checkpoints and generate a path through each one
-    IntVector2 initial = expectedPoints.Front().point;
-    IntVector2 previous = initial;
-    expectedPoints.Erase(expectedPoints.Begin()); // TODO: Optimize if Erase takes too much time
-    for(auto i = expectedPoints.Begin(); i != expectedPoints.End(); ++i) {
-        Vector<IntVector2> path;
-        if (AStar(map, size, previous, i->point, path))
-        {
-            String pathString("Travelling from");
-            pathString.AppendWithFormat(" (%d, %d) to (%d, %d)\n",
-                previous.x_, previous.y_,
-                i->point.x_, i->point.y_
-            );
-            for(auto j = path.Begin(); j != path.End(); j++)
+        logMap(log, map, size.x_, size.y_);
+
+        // Iterate through checkpoints and generate a path through each one
+        IntVector2 initial = expectedPoints.Front().point;
+        IntVector2 previous = initial;
+        expectedPoints.Erase(expectedPoints.Begin()); // TODO: Optimize if Erase takes too much time
+        for(auto i = expectedPoints.Begin(); i != expectedPoints.End(); ++i) {
+            Vector<IntVector2> path;
+            if (AStar(map, size, previous, i->point, path))
             {
-                pathString.AppendWithFormat("(%d, %d)\n", j->x_, j->y_);
-                // Update the count of all rooms after the initial room
-                if (*j != previous)
+                String pathString("Travelling from");
+                pathString.AppendWithFormat(" (%d, %d) to (%d, %d)\n",
+                                            previous.x_, previous.y_,
+                                            i->point.x_, i->point.y_
+                );
+                for(auto j = path.Begin(); j != path.End(); j++)
                 {
-                    map[j->y_ * size.x_ + j->x_] = map[previous.y_ * size.x_ + previous.x_] + 1;
-                    previous = *j;
+                    pathString.AppendWithFormat("(%d, %d)\n", j->x_, j->y_);
+                    // Update the count of all rooms after the initial room
+                    if (*j != previous)
+                    {
+                        map[j->y_ * size.x_ + j->x_] = map[previous.y_ * size.x_ + previous.x_] + 1;
+                        previous = *j;
+                    }
+                }
+                log->Write(LOG_INFO, pathString);
+
+            }
+            else {
+                log->Write(LOG_INFO, String("Could not find a path from")
+                    .AppendWithFormat(" (%d, %d) to (%d, %d)\n",
+                                      previous.x_, previous.y_,
+                                      i->point.x_, i->point.y_
+                    )
+                );
+                // No path to exit?
+                if (i->point == exit)
+                {
+                    doomCounter--;
                 }
             }
-            log->Write(LOG_INFO, pathString);
+        }
 
+        if (doomCounter <= 0)
+        {
+            log->Write(LOG_ERROR, "You have successfully managed to generate an impossible level.");
+            log->Write(LOG_ERROR, "And you did this not just once, but three different times.");
+            log->Write(LOG_ERROR, "Congratulations!");
+            log->Write(LOG_ERROR, "Way to confound the RNG system.");
+            GetSubsystem<Engine>()->Exit();
         }
-        else {
-            log->Write(LOG_INFO, String("Could not find a path from")
-                .AppendWithFormat(" (%d, %d) to (%d, %d)\n",
-                    previous.x_, previous.y_,
-                    i->point.x_, i->point.y_
-                )
-            );
-        }
+
+        logMap(log, map, size.x_, size.y_);
+        log->Write(LOG_INFO, "=======================");
     }
-
-    logMap(log, map, size.x_, size.y_);
-    log->Write(LOG_INFO, "=======================");
 
     return (new Node(context_));
 }
