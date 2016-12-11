@@ -6,8 +6,11 @@
 #include "Modes/MainMenuMode.h"
 #include "Subsystems/GameMode.h"
 #include "Subsystems/Map.h"
+#include <Urho3D/Audio/Sound.h>
+#include <Urho3D/Audio/SoundSource.h>
 #include <Urho3D/Core/Context.h>
 #include <Urho3D/Engine/Engine.h>
+#include <Urho3D/Input/Input.h>
 #include <Urho3D/Input/InputEvents.h>
 #include <Urho3D/Graphics/Camera.h>
 #include <Urho3D/Graphics/Graphics.h>
@@ -46,6 +49,8 @@ void DungeonMode::Start()
     Map* map = new Map(context_);
     context_->RegisterSubsystem(map);
 
+    input_ = GetSubsystem<Input>();
+
     log->Write(LOG_INFO, "Starting dungeon mode");
 
     scene_ = new Scene(context_);
@@ -59,15 +64,21 @@ void DungeonMode::Start()
     SharedPtr<Viewport> viewport(new Viewport(context_, scene_, camera));
     renderer->SetViewport(0, viewport);
 
-    SpriteSheet2D* levelSheet = cache->GetResource<SpriteSheet2D>("Textures/LevelAssets.xml");
+    SpriteSheet2D* levelSheet = cache->GetResource<SpriteSheet2D>("Textures/LevelAssetsSheet.xml");
     Sprite2D* sprite = levelSheet->GetSprite("Spawner0");
 
     Node* spriteNode = scene_->CreateChild("TestNode");
     StaticSprite2D* staticSprite = spriteNode->CreateComponent<StaticSprite2D>();
     staticSprite->SetSprite(sprite);
 
-    Node* mapNode = map->Generate();
+    Node* mapNode = map->Generate(scene_);
     scene_->AddChild(mapNode);
+
+    musicNode_ = new Node(context_);
+    Sound* music = cache->GetResource<Sound>("Sounds/TestTheme2.ogg");
+    music->SetLooped(true);
+    SoundSource* musicSource = musicNode_->CreateComponent<SoundSource>();
+    musicSource->Play(music);
 
     File file(context_, "testScene.xml", FILE_WRITE);
     if(file.IsOpen())
@@ -81,15 +92,39 @@ void DungeonMode::Start()
 
 void DungeonMode::Update(float timestep)
 {
-
+    const float MOVEMENT_FACTOR = 5.0f;
+    Vector2 direction(0,0);
+    if(input_->GetKeyDown(KEY_UP))
+    {
+        direction.y_ += 1;
+    }
+    if(input_->GetKeyDown(KEY_DOWN))
+    {
+        direction.y_ += -1;
+    }
+    if(input_->GetKeyDown(KEY_LEFT))
+    {
+        direction.x_ += -1;
+    }
+    if(input_->GetKeyDown(KEY_RIGHT))
+    {
+        direction.x_ += 1;
+    }
+    direction.Normalize();
+    if (direction != Vector2(0,0))
+    {
+        cameraNode_->Translate2D(direction * timestep * MOVEMENT_FACTOR);
+    }
 }
 
 void DungeonMode::Stop()
 {
-
+    SoundSource* musicSource = musicNode_->GetComponent<SoundSource>();
+    musicSource->Stop();
 }
 
-void DungeonMode::HandleKeyUp(Urho3D::StringHash type, Urho3D::VariantMap &data) {
+void DungeonMode::HandleKeyUp(Urho3D::StringHash type, Urho3D::VariantMap &data)
+{
     GameMode* gameMode = GetSubsystem<GameMode>();
     Engine* engine = GetSubsystem<Engine>();
     Log* log = GetSubsystem<Log>();

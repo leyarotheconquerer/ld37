@@ -3,9 +3,15 @@
 //
 
 #include "Map.h"
-#include <Urho3D/IO/Log.h>
-#include <Urho3D/Scene/Node.h>
 #include <Urho3D/Engine/Engine.h>
+#include <Urho3D/IO/Log.h>
+#include <Urho3D/Graphics/Renderer.h>
+#include <Urho3D/Resource/ResourceCache.h>
+#include <Urho3D/Scene/Scene.h>
+#include <Urho3D/Scene/Node.h>
+#include <Urho3D/Urho2D/Sprite2D.h>
+#include <Urho3D/Urho2D/SpriteSheet2D.h>
+#include <Urho3D/Urho2D/StaticSprite2D.h>
 
 using namespace Ld37;
 using namespace Urho3D;
@@ -20,7 +26,7 @@ struct ExpectedPoint {
     int dist;
 };
 
-Map::Map(Urho3D::Context *context) :
+Map::Map(Urho3D::Context* context) :
     Object(context),
     context_(context)
 {
@@ -43,11 +49,11 @@ void logMap(Log* log, int level, Vector<int> map, int width, int height) {
     log->Write(level, mapString);
 }
 
-Node* Map::Generate() {
+Node* Map::Generate(Scene* scene) {
 
     GenerateMap();
 
-    return ConstructMap();
+    return ConstructMap(scene);
 }
 
 void Map::GenerateMap()
@@ -196,9 +202,89 @@ void Map::GenerateMap()
     size_ = size;
 }
 
-Urho3D::Node* Map::ConstructMap()
+Urho3D::Node* Map::ConstructMap(Scene* scene)
 {
-    return NULL;
+    const float TILE_SIZE = 128 * PIXEL_SIZE;
+    const float ROOM_SIZE = TILE_SIZE * 4;
+    const int Z_OFFSET = 10 * PIXEL_SIZE;
+    const String CLOSED_ROOM = "Closed";
+    const String OPEN_ROOM = "Open";
+    const String FLOOR = "Floor";
+
+    ResourceCache* cache = GetSubsystem<ResourceCache>();
+
+    // And now I'm using initializer lists
+    // I'm so 11 :)
+    // Also, my IDE is annoyed with me
+    HashMap<int, IntVector2> directions = {
+        {0, {0, 1}},   {1, {0, 1}},	{2, {0, 1}},	{3, {0, 1}},
+        {4, {-1, 0}},   {5, {-1, 0}},	{6, {1, 0}},	{7, {1, 0}},
+        {8, {-1, 0}},   {9, {-1, 0}},	{10, {1, 0}},	{11, {1, 0}},
+        {12, {0, -1}},   {13, {0, -1}},   {14, {0, -1}},	{15, {0, -1}}
+    };
+
+    Node* mapNode = scene->CreateChild("Map");
+    SpriteSheet2D* levelSheet = cache->GetResource<SpriteSheet2D>("Textures/LevelAssetsSheet.xml");
+
+    // Generate all rooms in the map
+    for (int x = 0; x < size_.x_; x++)
+    {
+        for (int y = 0; y < size_.y_; y++)
+        {
+            if (map_[y * size_.x_ + x] != EMPTY)
+            {
+                String roomName;
+                roomName.AppendWithFormat("Room[%d,%d]", x, y);
+                Node* roomNode = mapNode->CreateChild(roomName);
+                Node* floorNode = roomNode->CreateChild("Floor");
+                Node* wallNode = roomNode->CreateChild("Walls");
+                for (int i = 0; i < 16; i++)
+                {
+                    String spriteName;
+                    IntVector2 dir = directions[i];
+                    // Determine whether there is an adjacent room is in this direction
+                    int neighbor = (y + dir.y_) * size_.x_ + x + dir.x_;
+                    if (neighbor >= 0 && neighbor < map_.Size() &&
+                        map_[neighbor] > 0 &&
+                        (map_[y * size_.x_ + x] == map_[neighbor] + 1 ||
+                        map_[y * size_.x_ + x] == map_[neighbor] - 1
+                        ))
+                    {
+                        spriteName = OPEN_ROOM;
+                    }
+                    else
+                    {
+                        spriteName = CLOSED_ROOM;
+                    }
+                    spriteName.AppendWithFormat("%d", i);
+
+                    Node* sectionNode = wallNode->CreateChild(spriteName);
+                    sectionNode->SetPosition(Vector3(
+                        x * ROOM_SIZE + (i % 4) * TILE_SIZE,
+                        y * ROOM_SIZE + ((15 - i) / 4) * TILE_SIZE
+                    ));
+                    Sprite2D* sectionSprite = levelSheet->GetSprite(spriteName);
+                    StaticSprite2D* spriteComponent = sectionNode->CreateComponent<StaticSprite2D>();
+                    spriteComponent->SetSprite(sectionSprite);
+                    spriteComponent->SetLayer(i / 8 + 1);
+
+                    String floorName = FLOOR;
+                    floorName.AppendWithFormat("%d", i);
+                    sectionNode = floorNode->CreateChild(floorName);
+                    sectionNode->SetPosition(Vector3(
+                        x * ROOM_SIZE + (i % 4) * TILE_SIZE,
+                        y * ROOM_SIZE + (i / 4) * TILE_SIZE
+                    ));
+                    sectionSprite = levelSheet->GetSprite(floorName);
+                    spriteComponent = sectionNode->CreateComponent<StaticSprite2D>();
+                    spriteComponent->SetSprite(sectionSprite);
+                    spriteComponent->SetLayer(0);
+                }
+            }
+        }
+    }
+
+    return mapNode;
 }
 
 Urho3D::IntVector2 Map::GenerateSidePoint(Urho3D::IntVector2 size, int side)

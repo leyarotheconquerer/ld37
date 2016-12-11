@@ -10,6 +10,7 @@
 namespace Urho3D
 {
     class Node;
+    class Scene;
 }
 
 namespace Ld37
@@ -26,14 +27,14 @@ namespace Ld37
         virtual ~Map();
 
         /// Generates a new map and returns the root node of the result
-        Urho3D::Node* Generate();
+        Urho3D::Node* Generate(Urho3D::Scene* scene_);
 
     private:
         /// Generates a map
         void GenerateMap();
 
         /// Constructs a pre-generated map
-        Urho3D::Node* ConstructMap();
+        Urho3D::Node* ConstructMap(Urho3D::Scene* scene);
 
         /// Generates a point on the side of map
         Urho3D::IntVector2 GenerateSidePoint(Urho3D::IntVector2 size, int side);

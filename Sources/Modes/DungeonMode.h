@@ -12,6 +12,7 @@ namespace Urho3D
     class Scene;
     class UIElement;
     class Node;
+    class Input;
 }
 
 namespace Ld37
@@ -58,6 +59,9 @@ namespace Ld37
 
         /// Node to play music and sound effects
         Urho3D::Node* musicNode_;
+
+        /// Stores input
+        Urho3D::Input* input_;
     };
 }
 
