@@ -101,6 +101,8 @@ namespace Ld37
         /// Get the space at the given indices
         Space* GetSpaceIndex(const Urho3D::IntVector2 i)
         {
+            if (i.x_ < 0 || i.x_ >= size_.x_ || i.y_ < 0 || i.y_ >= size_.y_)
+                return NULL;
             return &map_[i.y_ * size_.x_ + i.x_];
         }
 
@@ -111,6 +113,8 @@ namespace Ld37
                 (int)(i.x_ / ROOM_SIZE),
                 (int)(i.y_ / ROOM_SIZE),
             };
+            if (pos.x_ < 0 || pos.x_ >= size_.x_ || pos.y_ < 0 || pos.y_ >= size_.y_)
+                return NULL;
             return GetSpaceIndex(pos);
         }
 

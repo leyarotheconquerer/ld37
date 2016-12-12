@@ -4,6 +4,7 @@
 
 #include "DungeonMode.h"
 #include "Components/Hero.h"
+#include "Components/Player.h"
 #include "Modes/MainMenuMode.h"
 #include "Subsystems/GameMode.h"
 #include "Subsystems/Map.h"
@@ -46,6 +47,7 @@ DungeonMode::DungeonMode(Urho3D::Context *context) :
     context_(context)
 {
     context->RegisterFactory<Hero>();
+    context->RegisterFactory<Player>();
 }
 
 DungeonMode::~DungeonMode()
@@ -78,6 +80,10 @@ void DungeonMode::Start() {
     Camera* camera = cameraNode_->CreateComponent<Camera>();
     camera->SetOrthographic(true);
     camera->SetOrthoSize((float) graphics->GetHeight() * PIXEL_SIZE * 2);
+    cameraOffset_ = Vector2(
+        graphics->GetWidth() * PIXEL_SIZE / 2,
+        graphics->GetHeight() * PIXEL_SIZE / 2
+    );
 
     SharedPtr<Viewport> viewport(new Viewport(context_, scene_, camera));
     renderer->SetViewport(0, viewport);
@@ -101,6 +107,17 @@ void DungeonMode::Start() {
     Vector2 spawnPos = heroSpawn->items.Front().pos;
     heroNode_->SetPosition(Vector3(spawnPos.x_, spawnPos.y_, 0));
 
+    Sprite2D* playerSprite = cache->GetResource<Sprite2D>("Textures/PlayerRoom.png");
+    playerNode_ = scene_->CreateChild("PlayerNode");
+    StaticSprite2D* playerStatic = playerNode_->CreateComponent<StaticSprite2D>();
+    playerStatic->SetSprite(playerSprite);
+    playerStatic->SetLayer(21);
+    playerNode_->CreateComponent<Player>();
+    Space* playerSpawn = map->GetPlayerSpawn();
+    spawnPos = playerSpawn->pos;
+    playerNode_->SetPosition2D(spawnPos + PLAYER_OFFSET);
+    cameraNode_->SetPosition2D(playerNode_->GetPosition2D());
+
     musicNode_ = new Node(context_);
     Sound *music = cache->GetResource<Sound>("Sounds/TestTheme2.ogg");
     music->SetLooped(true);
@@ -115,6 +132,7 @@ void DungeonMode::Start() {
 
     Button *mainMenu = (Button *) uiRoot_->GetChild(String("MainMenu"));
     heroHealth_ = (Text *) uiRoot_->GetChild(String("HeroHealthText"), true);
+    playerItem_ = (Text *) uiRoot_->GetChild(String("ItemText"), true);
 
     SubscribeToEvent(mainMenu, E_RELEASED, URHO3D_HANDLER(DungeonMode, HandleMainMenu));
 
@@ -126,33 +144,18 @@ void DungeonMode::Start() {
 void DungeonMode::Update(float timestep)
 {
     const float MOVEMENT_FACTOR = 10.0f;
-    Vector2 direction(0,0);
-    if(input_->GetKeyDown(KEY_UP) || input_->GetKeyDown(KEY_W))
-    {
-        direction.y_ += 1;
-    }
-    if(input_->GetKeyDown(KEY_DOWN) || input_->GetKeyDown(KEY_S))
-    {
-        direction.y_ += -1;
-    }
-    if(input_->GetKeyDown(KEY_LEFT) || input_->GetKeyDown(KEY_A))
-    {
-        direction.x_ += -1;
-    }
-    if(input_->GetKeyDown(KEY_RIGHT) || input_->GetKeyDown(KEY_D))
-    {
-        direction.x_ += 1;
-    }
-    direction.Normalize();
-    if (direction != Vector2(0,0))
-    {
-        cameraNode_->Translate2D(direction * timestep * MOVEMENT_FACTOR);
-    }
+    cameraNode_->SetPosition(playerNode_->GetPosition());
 
     Hero* hero = heroNode_->GetComponent<Hero>();
     if (hero)
     {
         heroHealth_->SetText(String().AppendWithFormat("%d", hero->GetHeath()));
+    }
+
+    Player* player = playerNode_->GetComponent<Player>();
+    if (player)
+    {
+        playerItem_->SetText(String((int)player->GetItem()->type));
     }
 }
 

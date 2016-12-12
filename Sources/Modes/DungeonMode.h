@@ -18,6 +18,7 @@ namespace Urho3D
 
 namespace Ld37
 {
+
     /// Dungeon game mode
     class DungeonMode : public Mode
     {
@@ -60,6 +61,12 @@ namespace Ld37
 
         /// Camera scene node
         Urho3D::Node* cameraNode_;
+        Urho3D::Vector2 cameraOffset_;
+
+        /// Player Item UI Element
+        Urho3D::SharedPtr<Urho3D::Text> playerItem_;
+        /// Player scene node
+        Urho3D::Node* playerNode_;
 
         /// Hero Health UI Element
         Urho3D::SharedPtr<Urho3D::Text> heroHealth_;
