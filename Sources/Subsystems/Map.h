@@ -36,6 +36,25 @@ namespace Ld37
     /// Name of a floor room tile
     const Urho3D::String FLOOR = "Floor";
 
+    // Item attack rates, etc...
+    // Should this be it's own component?
+    // Yes
+    // Is it?
+    // Nah. time constraints.
+    // Thanks Ludum Dare
+    const int HOLE_MIN_ATTACK = 5;
+    const int HOLE_MAX_ATTACK = 50;
+    const int FALSE_TREASURE_MIN_ATTACK = 4;
+    const int FALSE_TREASURE_MAX_ATTACK = 20;
+    const float MONSTER_SPAWN_RATE = 5.f;
+    const float MONSTER_SPAWN_COUNT = 5.f;
+    const int MONSTER_MIN_HEALTH = 4;
+    const int MONSTER_MAX_HEALTH = 10;
+    const int MONSTER_MIN_ATTACK = 6;
+    const int MONSTER_MAX_ATTACK = 20;
+    const int TREASURE_MIN_HEAL = 10;
+    const int TREASURE_MAX_HEAL = 30;
+
     /// Stores information about items in a room
     struct Item {
         enum Type {
@@ -57,6 +76,7 @@ namespace Ld37
         enum Direction {
             NO_DIR = 0, NORTH, EAST, SOUTH, WEST
         };
+        Urho3D::IntVector2 idx;
         Urho3D::Vector2 pos;
         Space* next = NULL;
         Direction nextDir = NO_DIR;

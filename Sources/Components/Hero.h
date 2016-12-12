@@ -14,11 +14,12 @@ namespace Urho3D
 
 namespace Ld37
 {
+    struct Item;
     enum HeroMode {
         MOVING = 0, SEEKING, ATTACKING, DYING
     };
 
-    const float PATH_TICK = 1.0f;
+    const float UPDATE_RATE = 1.0f;
     const float HERO_MOVEMENT_RATE = 1.0f;
 
     /// Component enabling hero behavior
@@ -47,6 +48,12 @@ namespace Ld37
         /// Handle frame update events
         void HandleUpdate(Urho3D::StringHash type, Urho3D::VariantMap& data);
 
+        /// Resolves an attack against the hero
+        void ResolveAttack(int min, int max);
+
+        /// Reasolves a treasure bonus
+        void ResolveHeal(int minHeal, int maxHeal);
+
         /// Health of the hero
         int health_;
 
@@ -62,10 +69,13 @@ namespace Ld37
     private:
 
         /// Time since the last path refresh
-        float pathTick_ = 0.f;
+        float updateTick_ = 0.f;
 
         /// Current activity of the hero
         HeroMode currentMode_ = MOVING;
+
+        /// The current item of the hero's focus
+        Item* currentItem_;
     };
 }
 

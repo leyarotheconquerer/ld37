@@ -266,21 +266,20 @@ void Map::PopulateMap(Urho3D::Vector<int>& map)
                              i / size_.x_
                          });
         Vector2 pos = Vector2(space.x_ * ROOM_SIZE, space.y_ * ROOM_SIZE);
+        map_[i].idx = space;
+        map_[i].pos = pos;
         if (map[i] == EMPTY)
         {
             map_[i].type = Space::EMPTY;
-            map_[i].pos = pos;
         }
         else if(map[i] == SPAWNPOINT)
         {
             map_[i].type = Space::SPAWN;
-            map_[i].pos = pos;
             playerSpawn_ = i;
         }
         else
         {
             map_[i].type = Space::ROOM;
-            map_[i].pos = pos;
             HashMap<int, int> neighbors = {
                 {Space::SOUTH, (space.y_ - 1) * size_.x_ + space.x_},
                 {Space::EAST, space.y_ * size_.x_ + space.x_ + 1},
@@ -348,7 +347,7 @@ void Map::PopulateMap(Urho3D::Vector<int>& map)
             item.type = static_cast<Item::Type>((Rand() % 3) + 1);
             item.pos = pos + placements[item.dir];
 
-            map_[i].items.Push(item);
+            map_[spaceIndex].items.Push(item);
             placed++;
         }
         i++;
